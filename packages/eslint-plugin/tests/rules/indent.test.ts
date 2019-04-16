@@ -26,7 +26,7 @@ abstract class Foo {
         console.log('hi');
     }
 }
-            `,
+      `,
     ],
   },
   {
@@ -40,7 +40,7 @@ class Foo {
         b : number
     };
 }
-            `,
+      `,
     ],
   },
   {
@@ -54,7 +54,7 @@ class Foo {
         b : number
     };
 }
-            `,
+      `,
     ],
   },
   {
@@ -62,7 +62,7 @@ class Foo {
     code: [
       `
 type foo = ArrType[];
-            `,
+      `,
     ],
   },
   {
@@ -73,21 +73,21 @@ const foo = {} as {
     foo: string,
     bar: number,
 };
-            `,
+      `,
       nonTsTestCase`
 const foo = {} ===
 {
     foo: string,
     bar: number,
 };
-            `,
+      `,
       `
 const foo = {} as
 {
     foo: string,
     bar: number,
 };
-            `,
+      `,
     ],
   },
   {
@@ -102,7 +102,7 @@ const Foo = T
     : {
         c: string
     };
-            `,
+      `,
       `
 type Foo<T> = T extends string
     ? {
@@ -112,19 +112,19 @@ type Foo<T> = T extends string
     : {
         c: string
     };
-            `,
+      `,
       nonTsTestCase`
 const Foo = T ? {
     a: number,
     b: boolean
 } : string;
-            `,
+      `,
       `
 type Foo<T> = T extends string ? {
     a: number,
     b: boolean
 } : string;
-            `,
+      `,
     ],
   },
   {
@@ -134,7 +134,7 @@ type Foo<T> = T extends string ? {
 type Constructor<T> = new (
     ...args: any[]
 ) => T;
-            `,
+      `,
     ],
   },
   {
@@ -148,7 +148,7 @@ interface Foo {
         baz : string
     }
 }
-            `,
+      `,
     ],
   },
   {
@@ -159,7 +159,7 @@ declare function foo() : {
     bar : number,
     baz : string,
 };
-            `,
+      `,
     ],
   },
   {
@@ -174,7 +174,7 @@ class Foo {
         }
     )
 }
-            `,
+      `,
     ],
   },
   {
@@ -185,7 +185,7 @@ enum Foo {
     bar = 1,
     baz = 1,
 }
-            `,
+      `,
     ],
   },
   {
@@ -196,7 +196,7 @@ export = {
     a: 1,
     b: 2,
 }
-            `,
+      `,
     ],
   },
   {
@@ -207,7 +207,7 @@ const foo: () => void = () => ({
     a: 1,
     b: 2,
 });
-            `,
+      `,
       `
 const foo: () => {
     a: number,
@@ -216,7 +216,7 @@ const foo: () => {
     a: 1,
     b: 2,
 });
-            `,
+      `,
       `
 const foo: ({
     a: number,
@@ -225,7 +225,7 @@ const foo: ({
     a: 1,
     b: 2,
 });
-            `,
+      `,
       `
 const foo: ({
     a: number,
@@ -237,7 +237,7 @@ const foo: ({
     a: arg.a,
     b: arg.b,
 });
-            `,
+      `,
     ],
   },
   {
@@ -248,7 +248,7 @@ const foo: import("bar") = {
     a: 1,
     b: 2,
 };
-            `,
+      `,
       `
 const foo: import(
     "bar"
@@ -256,7 +256,7 @@ const foo: import(
     a: 1,
     b: 2,
 };
-            `,
+      `,
     ],
   },
   {
@@ -266,12 +266,12 @@ const foo: import(
 const Foo = Bar[
     'asdf'
 ];
-            `,
+      `,
       `
 type Foo = Bar[
     'asdf'
 ];
-            `,
+      `,
     ],
   },
   {
@@ -284,7 +284,7 @@ type Foo = {
         [b : number] : boolean
     }
 }
-            `,
+      `,
     ],
   },
   {
@@ -296,7 +296,7 @@ type Foo<T> = T extends string
     : {
         a : string
     };
-            `,
+      `,
     ],
   },
   {
@@ -310,7 +310,7 @@ interface Foo {
         d : boolean
     }
 }
-            `,
+      `,
     ],
   },
   {
@@ -324,7 +324,7 @@ interface Foo extends Bar {
         d : boolean
     }
 }
-            `,
+      `,
     ],
   },
   {
@@ -334,7 +334,7 @@ interface Foo extends Bar {
 type Foo = "string" & {
     a : number
 } & number;
-            `,
+      `,
     ],
   },
   {
@@ -344,12 +344,12 @@ type Foo = "string" & {
 const foo = require(
     'asdf'
 );
-            `,
+      `,
       `
 import foo = require(
     'asdf'
 );
-            `,
+      `,
     ],
   },
   // TSLiteralType
@@ -360,25 +360,25 @@ import foo = require(
 type Partial<T> = {
     [P in keyof T]: T[P];
 }
-            `,
+      `,
       `
 // TSQuestionToken
 type Partial<T> = {
     [P in keyof T]?: T[P];
 }
-            `,
+      `,
       `
 // TSPlusToken
 type Partial<T> = {
     [P in keyof T]+?: T[P];
 }
-            `,
+      `,
       `
 // TSMinusToken
 type Partial<T> = {
     [P in keyof T]-?: T[P];
 }
-            `,
+      `,
     ],
   },
   {
@@ -392,7 +392,7 @@ interface Foo {
         b : string
     }
 }
-            `,
+      `,
     ],
   },
   // TSMinusToken - tested in TSMappedType
@@ -406,7 +406,7 @@ declare module "foo" {
         b : number,
     }
 }
-            `,
+      `,
     ],
   },
   {
@@ -416,12 +416,12 @@ declare module "foo" {
 const foo = a
     .b.
     c;
-            `,
+      `,
       `
 const foo = a!
     .b!.
     c;
-            `,
+      `,
     ],
   },
   {
@@ -439,30 +439,45 @@ class Foo {
         console.log('foo')
     }
 }
-            `,
+      `,
     ],
   },
   {
     node: 'TSParenthesizedType',
     code: [
       `
+type Foo = (
+    A
+);
+      `,
+      `
 const x: Array<(
-    | {
-        __typename: "Foo",
-    }
-    | {
-        __typename: "Baz",
-    }
-    | (
-        | {
+    (
+        {
             __typename: "Baz",
-        }
-        | {
-            __typename: "Buzz",
         }
     )
 )>;
-            `,
+      `,
+      // eslint ignores indentation of binary expressions, so this won't work for now...
+      //       `
+      // const x: Array<(
+      //     | {
+      //         __typename: "Foo",
+      //     }
+      //     | {
+      //         __typename: "Baz",
+      //     }
+      //     | (
+      //         | {
+      //             __typename: "Baz",
+      //         }
+      //         | {
+      //             __typename: "Buzz",
+      //         }
+      //     )
+      // )>;
+      //       `,
     ],
   },
   // TSPlusToken - tested in TSMappedType
@@ -477,7 +492,7 @@ interface Foo {
         b : number
     }
 }
-            `,
+      `,
     ],
   },
   {
@@ -488,7 +503,7 @@ const a: Foo.bar = {
     a: 1,
     b: 2,
 };
-            `,
+      `,
       nonTsTestCase`
 const a = Foo.
     bar
@@ -496,7 +511,7 @@ const a = Foo.
         a: 1,
         b: 2,
     };
-            `,
+      `,
       `
 const a: Foo.
     bar
@@ -504,7 +519,7 @@ const a: Foo.
         a: 1,
         b: 2,
     };
-            `,
+      `,
     ],
   },
   // TSQuestionToken - tested in TSMappedType
@@ -516,7 +531,7 @@ type foo = [
     string,
     ...string[],
 ];
-            `,
+      `,
     ],
   },
   {
@@ -529,7 +544,7 @@ declare class MyArray<T> extends Array<T> {
         a: number,
     }
 }
-            `,
+      `,
     ],
   },
   {
@@ -540,13 +555,13 @@ const foo = [
     string,
     number,
 ];
-            `,
+      `,
       `
 type foo = [
     string,
     number,
 ];
-            `,
+      `,
       nonTsTestCase`
 const foo = [
     [
@@ -554,7 +569,7 @@ const foo = [
         number,
     ],
 ];
-            `,
+      `,
       `
 type foo = [
     [
@@ -562,9 +577,10 @@ type foo = [
         number,
     ],
 ];
-            `,
+      `,
     ],
   },
+  // TSTypeAliasDeclaration - tested in everything..
   // TSTypeAnnotation - tested in everything..
   // TSTypeLiteral - tested in everything..
   {
@@ -575,7 +591,7 @@ type T = keyof {
     a: 1,
     b: 2,
 };
-            `,
+      `,
     ],
   },
   {
@@ -586,7 +602,7 @@ type Foo<T> = {
     a : unknown,
     b : never,
 }
-            `,
+      `,
       `
 function foo<
     T,
@@ -594,7 +610,7 @@ function foo<
 >() {
     console.log('');
 }
-            `,
+      `,
     ],
   },
   // TSTypeReference - tested in everything..
@@ -605,7 +621,24 @@ function foo<
 type Foo = string | {
     a : number
 } | number;
-            `,
+      `,
+      // eslint's indent rule impl uses the indentation of the first line, so these won't report any errors when indentation is removed
+      //       `
+      // type Foo =
+      //     string
+      //     | {
+      //         a : number
+      //     }
+      //     | number;
+      //       `,
+      //       `
+      // type Foo =
+      //     | string
+      //     | {
+      //         a : number
+      //     }
+      //     | number;
+      //       `,
     ],
   },
 ].reduce<RunTests<MessageIds, Options>>(
@@ -766,6 +799,66 @@ const div: JQuery<HTMLElement> = $('<div>')
             `,
       options: [2, { VariableDeclarator: { const: 3 } }],
     },
+    `
+const x: Array<(
+    | {
+        __typename: "Foo",
+    }
+    | {
+        __typename: "Baz",
+    }
+    | (
+        | {
+            __typename: "Baz",
+        }
+        | {
+            __typename: "Buzz",
+        }
+    )
+)>;
+    `,
+    // https://github.com/typescript-eslint/typescript-eslint/issues/121
+    ...[
+      `
+type Foo = A
+    | B;
+      `,
+      `
+type Foo = A
+    | B
+    | C;
+      `,
+      `
+type Foo = A
+    | B
+    & C;
+      `,
+      `
+type Foo = A
+    | B
+    & C
+    | D
+    & E
+    | F;
+      `,
+    ].reduce<string[]>((acc, code) => {
+      acc.push(code);
+      acc.push(code.replace('type', 'const'));
+
+      // as an example to show that eslint doesn't care for indentation of binary expressions
+      acc.push(code.replace(/^ +/gm, ''));
+      acc.push(code.replace('type', 'const').replace(/^ +/gm, ''));
+      return acc;
+    }, []),
+    `
+type Foo =
+    & A
+    | B
+    & C
+    | D
+    & E
+    | F;
+    `,
   ],
   invalid: [
     ...individualNodeTests.invalid,

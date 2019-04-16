@@ -4,7 +4,11 @@
  * This is done intentionally based on the internal implementation of the base indent rule.
  */
 
-import { TSESTree, AST_NODE_TYPES } from '@typescript-eslint/typescript-estree';
+import {
+  TSESTree,
+  AST_NODE_TYPES,
+  AST_TOKEN_TYPES,
+} from '@typescript-eslint/typescript-estree';
 import baseRule from 'eslint/lib/rules/indent';
 import * as util from '../util';
 
@@ -69,6 +73,7 @@ const KNOWN_NODES = new Set([
   AST_NODE_TYPES.TSRestType,
   AST_NODE_TYPES.TSThisType,
   AST_NODE_TYPES.TSTupleType,
+  AST_NODE_TYPES.TSTypeAliasDeclaration,
   AST_NODE_TYPES.TSTypeAnnotation,
   AST_NODE_TYPES.TSTypeLiteral,
   AST_NODE_TYPES.TSTypeOperator,
@@ -173,7 +178,7 @@ export default util.createRule<Options, MessageIds>({
         }
       },
 
-      TSAsExpression(node: TSESTree.TSAsExpression) {
+      TSAsExpression(node) {
         // transform it to a BinaryExpression
         return rules['BinaryExpression, LogicalExpression']({
           type: AST_NODE_TYPES.BinaryExpression,
@@ -189,7 +194,7 @@ export default util.createRule<Options, MessageIds>({
         });
       },
 
-      TSConditionalType(node: TSESTree.TSConditionalType) {
+      TSConditionalType(node) {
         // transform it to a ConditionalExpression
         return rules.ConditionalExpression({
           type: AST_NODE_TYPES.ConditionalExpression,
@@ -236,12 +241,12 @@ export default util.createRule<Options, MessageIds>({
         });
       },
 
-      TSImportEqualsDeclaration(node: TSESTree.TSImportEqualsDeclaration) {
+      TSImportEqualsDeclaration(node) {
         // transform it to an VariableDeclaration
         // use VariableDeclaration instead of ImportDeclaration because it's essentially the same thing
         const { id, moduleReference } = node;
 
-        return rules.VariableDeclaration({
+        const converted: TSESTree.VariableDeclaration = {
           type: AST_NODE_TYPES.VariableDeclaration,
           kind: 'const' as 'const',
           declarations: [
@@ -286,10 +291,13 @@ export default util.createRule<Options, MessageIds>({
           parent: node.parent,
           range: node.range,
           loc: node.loc,
-        });
+        };
+
+        rules.VariableDeclaration(converted);
+        rules.VariableDeclarator(converted.declarations[0]);
       },
 
-      TSIndexedAccessType(node: TSESTree.TSIndexedAccessType) {
+      TSIndexedAccessType(node) {
         // convert to a MemberExpression
         return rules['MemberExpression, JSXMemberExpression, MetaProperty']({
           type: AST_NODE_TYPES.MemberExpression,
@@ -303,7 +311,7 @@ export default util.createRule<Options, MessageIds>({
         });
       },
 
-      TSInterfaceBody(node: TSESTree.TSInterfaceBody) {
+      TSInterfaceBody(node) {
         // transform it to an ClassBody
         return rules['BlockStatement, ClassBody']({
           type: AST_NODE_TYPES.ClassBody,
@@ -342,7 +350,75 @@ export default util.createRule<Options, MessageIds>({
         });
       },
 
-      TSMappedType(node: TSESTree.TSMappedType) {
+      'TSIntersectionType, TSUnionType'(
+        node: TSESTree.TSIntersectionType | TSESTree.TSUnionType,
+      ) {
+        // transform it to a BinaryExpression
+
+        const binaryExpressions: TSESTree.BinaryExpression[] = [];
+
+        function toBinaryExpression(
+          root: TSESTree.TypeNode,
+          types: TSESTree.TypeNode[],
+        ): TSESTree.BinaryExpression {
+          // clone the array as we're going to modify it...
+          types = [...types];
+          const nextType = types.shift()!;
+
+          const left: TSESTree.Node =
+            nextType.type === AST_NODE_TYPES.TSIntersectionType ||
+            nextType.type === AST_NODE_TYPES.TSUnionType
+              ? // recursively convert the nested intersection/union
+                toBinaryExpression(nextType, nextType.types)
+              : nextType;
+          let right: TSESTree.Node = null!;
+
+          if (types.length > 1) {
+            // continue converting the chain
+            // note that we pass node as the root because the operator is constant
+            right = toBinaryExpression(node, types);
+          } else {
+            // end of the line, no more nodes to convert
+            right = types.shift()!;
+          }
+
+          const converted: TSESTree.BinaryExpression = {
+            type: AST_NODE_TYPES.BinaryExpression,
+            left: left as any,
+            right: right as any,
+            operator:
+              root.type === AST_NODE_TYPES.TSIntersectionType ? '&' : '|',
+
+            // location data
+            range: [left.range[0], right.range[1]],
+            loc: {
+              start: left.loc.start,
+              end: right.loc.end,
+            },
+          };
+          binaryExpressions.push(converted);
+
+          return converted;
+        }
+
+        const root = toBinaryExpression(node, node.types);
+
+        // working around https://github.com/typescript-eslint/typescript-eslint/issues/435
+        const leadingCharacter = context.getSourceCode().getTokenBefore(root);
+        if (
+          leadingCharacter &&
+          leadingCharacter.type === AST_TOKEN_TYPES.Punctuator &&
+          (leadingCharacter.value === '|' || leadingCharacter.value === '&')
+        ) {
+          root.range[0] = leadingCharacter.range[0];
+          root.loc.start = { ...leadingCharacter.loc.start };
+        }
+
+        // we have to manuallly "visit" every single node we just created
+        binaryExpressions.forEach(rules['BinaryExpression, LogicalExpression']);
+      },
+
+      TSMappedType(node) {
         const sourceCode = context.getSourceCode();
         const squareBracketStart = sourceCode.getTokenBefore(
           node.typeParameter,
@@ -384,7 +460,7 @@ export default util.createRule<Options, MessageIds>({
         });
       },
 
-      TSModuleBlock(node: TSESTree.TSModuleBlock) {
+      TSModuleBlock(node) {
         // transform it to a BlockStatement
         return rules['BlockStatement, ClassBody']({
           type: AST_NODE_TYPES.BlockStatement,
@@ -397,7 +473,7 @@ export default util.createRule<Options, MessageIds>({
         });
       },
 
-      TSQualifiedName(node: TSESTree.TSQualifiedName) {
+      TSQualifiedName(node) {
         return rules['MemberExpression, JSXMemberExpression, MetaProperty']({
           type: AST_NODE_TYPES.MemberExpression,
           object: node.left as any,
@@ -410,7 +486,7 @@ export default util.createRule<Options, MessageIds>({
         });
       },
 
-      TSTupleType(node: TSESTree.TSTupleType) {
+      TSTupleType(node) {
         // transform it to an ArrayExpression
         return rules['ArrayExpression, ArrayPattern']({
           type: AST_NODE_TYPES.ArrayExpression,
@@ -423,7 +499,36 @@ export default util.createRule<Options, MessageIds>({
         });
       },
 
-      TSTypeParameterDeclaration(node: TSESTree.TSTypeParameterDeclaration) {
+      TSTypeAliasDeclaration(node) {
+        // transform it to an VariableDeclaration
+        const { id, typeAnnotation } = node;
+
+        const converted: TSESTree.VariableDeclaration = {
+          type: AST_NODE_TYPES.VariableDeclaration,
+          kind: 'const' as 'const',
+          declarations: [
+            {
+              type: AST_NODE_TYPES.VariableDeclarator,
+              range: [id.range[0], typeAnnotation.range[1]],
+              loc: {
+                start: id.loc.start,
+                end: typeAnnotation.loc.end,
+              },
+              id: id,
+              init: typeAnnotation as any,
+            },
+          ],
+
+          // location data
+          parent: node.parent,
+          range: node.range,
+          loc: node.loc,
+        };
+        rules.VariableDeclaration(converted);
+        rules.VariableDeclarator(converted.declarations[0]);
+      },
+
+      TSTypeParameterDeclaration(node) {
         const [name, ...attributes] = node.params;
 
         // JSX is about the closest we can get because the angle brackets
