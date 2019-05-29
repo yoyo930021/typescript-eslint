@@ -1,7 +1,7 @@
 import { TSESLint } from '@typescript-eslint/experimental-utils';
 import chalk from 'chalk';
 import marked from 'marked';
-import { logError } from './log';
+import { logError, TICK } from './log';
 
 function validateTableStructure(
   rules: Record<string, TSESLint.RuleModule<any, any>>,
@@ -41,6 +41,10 @@ function validateTableStructure(
       return;
     }
   });
+
+  if (!hasErrors) {
+    console.log(TICK);
+  }
 
   return hasErrors;
 }

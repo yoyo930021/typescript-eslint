@@ -4,24 +4,34 @@ import { checkForRuleDocs } from './check-for-rule-docs';
 import { parseReadme } from './parse-readme';
 import { validateTableStructure } from './validate-table-structure';
 import { validateTableRules } from './validate-table-rules';
+import { validateRuleDocs } from './validate-rule-docs';
 
 const { rules } = plugin;
 
 let hasErrors = false;
-console.log(chalk.underline('Checking for rule docs'));
-hasErrors = hasErrors || checkForRuleDocs(rules);
 
 console.log();
-console.log(chalk.underline('Valdiating README.md'));
+console.log(chalk.underline('Checking rule docs'));
+
+console.log();
+console.log(chalk.italic('Checking for existance'));
+hasErrors = checkForRuleDocs(rules) || hasErrors;
+
+console.log();
+console.log(chalk.italic('Checking content'));
+hasErrors = validateRuleDocs(rules) || hasErrors;
+
+console.log();
+console.log(chalk.underline('Validating README.md'));
 const rulesTable = parseReadme();
 
 console.log();
 console.log(chalk.italic('Checking table structure...'));
-hasErrors = hasErrors || validateTableStructure(rules, rulesTable);
+hasErrors = validateTableStructure(rules, rulesTable) || hasErrors;
 
 console.log();
 console.log(chalk.italic('Checking rules...'));
-hasErrors = hasErrors || validateTableRules(rules, rulesTable);
+hasErrors = validateTableRules(rules, rulesTable) || hasErrors;
 
 if (hasErrors) {
   console.log('\n\n');

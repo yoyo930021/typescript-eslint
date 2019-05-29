@@ -2,6 +2,10 @@
 
 Grouping overloaded members together can improve readability of the code.
 
+## Options
+
+None.
+
 ## Rule Details
 
 This rule aims to standardise the way overloaded members are organized.
