@@ -12,6 +12,9 @@ import { Extra } from './parser-options';
 const defaultCompilerOptions: ts.CompilerOptions = {
   allowNonTsExtensions: true,
   allowJs: true,
+  // these flags are required to make no-unused-vars work
+  noUnusedLocals: true,
+  noUnusedParameters: true,
 };
 
 /**
