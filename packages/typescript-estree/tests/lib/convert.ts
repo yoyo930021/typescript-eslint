@@ -160,7 +160,7 @@ describe('convert', () => {
     const instance = new Converter(ast, {
       errorOnUnknownASTType: false,
       useJSXTextNode: false,
-      shouldPreserveNodeMaps: true,
+      shouldPreserveNodeMaps: false,
     });
     const program = instance.convertProgram();
     const maps = instance.getASTMaps();

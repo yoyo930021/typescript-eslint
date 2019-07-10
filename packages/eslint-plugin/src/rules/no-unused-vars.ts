@@ -41,6 +41,7 @@ export default util.createRule<Options, MessageIds>({
   ],
   create(context, [{ ignoredNamesRegex }]) {
     const parserServices = util.getParserServices(context);
+    const parserServices = util.getParserServices(context, true);
     const tsProgram = parserServices.program;
 
     const ignoredNames =

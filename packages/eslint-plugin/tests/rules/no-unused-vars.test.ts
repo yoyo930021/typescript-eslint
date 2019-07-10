@@ -1,24 +1,13 @@
 import rule from '../../src/rules/no-unused-vars';
-import { RuleTester, getFixturesRootDir } from '../RuleTester';
-
-const rootDir = getFixturesRootDir();
+import { RuleTester } from '../RuleTester';
 
 const ruleTester = new RuleTester({
   parserOptions: {
     ecmaVersion: 2018,
     sourceType: 'module',
-    tsconfigRootDir: rootDir,
-    project: './tsconfig.json',
   },
   parser: '@typescript-eslint/parser',
 });
-
-// the base rule doesn't have messageIds
-// function error(
-//   messages: { message: string; line: number; column: number }[],
-// ): any[] {
-//   return messages;
-// }
 
 function makeExternalModule(code: string): string {
   return `${code}\nexport const __externalModule = 1;`;
