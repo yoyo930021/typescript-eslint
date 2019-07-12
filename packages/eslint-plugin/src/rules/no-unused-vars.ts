@@ -61,9 +61,9 @@ export default util.createRule<Options, MessageIds>({
       },
     ],
     messages: {
-      unused: "'{{name}}' is declared but its value is never read.",
+      unused: "{{type}} '{{name}}' is declared but its value is never read.",
       unusedWithIgnorePattern:
-        "'{{name}}' is declared but its value is never read. Allowed unused names must match {{pattern}}",
+        "{{type}} '{{name}}' is declared but its value is never read. Allowed unused names must match {{pattern}}",
     },
   },
   defaultOptions: [
@@ -97,7 +97,7 @@ export default util.createRule<Options, MessageIds>({
       },
     };
 
-    function handleVariable(identifier: ts.Identifier): void {
+    function handleVariable(identifier: ts.Identifier, type: string): void {
       const node = parserServices.tsNodeToESTreeNodeMap.get(identifier);
       const regex = options.variables.ignoredNames;
       const name = identifier.getText();
@@ -108,6 +108,7 @@ export default util.createRule<Options, MessageIds>({
             messageId: 'unusedWithIgnorePattern',
             data: {
               name,
+              type,
               pattern: regex.toString(),
             },
           });
@@ -118,6 +119,7 @@ export default util.createRule<Options, MessageIds>({
           messageId: 'unused',
           data: {
             name,
+            type,
           },
         });
       }
@@ -145,6 +147,7 @@ export default util.createRule<Options, MessageIds>({
             messageId: 'unusedWithIgnorePattern',
             data: {
               name,
+              type: 'Parameter',
               pattern: regex.toString(),
             },
           });
@@ -154,6 +157,7 @@ export default util.createRule<Options, MessageIds>({
             messageId: 'unused',
             data: {
               name,
+              type: 'Parameter',
             },
           });
         }
@@ -199,6 +203,26 @@ export default util.createRule<Options, MessageIds>({
               if (parent && node.kind === ts.SyntaxKind.Identifier) {
                 // is a single variable diagnostic
                 switch (parent.kind) {
+                  case ts.SyntaxKind.ClassDeclaration:
+                    handleVariable(node as ts.Identifier, 'Class');
+                    break;
+
+                  case ts.SyntaxKind.EnumDeclaration:
+                    handleVariable(node as ts.Identifier, 'Enum');
+                    break;
+
+                  case ts.SyntaxKind.FunctionDeclaration:
+                    handleVariable(node as ts.Identifier, 'Function');
+                    break;
+
+                  case ts.SyntaxKind.InterfaceDeclaration:
+                    handleVariable(node as ts.Identifier, 'Interface');
+                    break;
+
+                  case ts.SyntaxKind.MethodDeclaration:
+                    handleVariable(node as ts.Identifier, 'Method');
+                    break;
+
                   case ts.SyntaxKind.Parameter:
                     handleParameter(
                       node as ts.Identifier,
@@ -206,16 +230,19 @@ export default util.createRule<Options, MessageIds>({
                     );
                     break;
 
-                  // ts.SyntaxKind.VariableDeclaration
-                  // ts.SyntaxKind.TypeAliasDeclaration
-                  // ts.SyntaxKind.InterfaceDeclaration
-                  // ts.SyntaxKind.FunctionDeclaration
-                  // ts.SyntaxKind.ClassDeclaration
-                  // ts.SyntaxKind.EnumDeclaration
-                  // ts.SyntaxKind.PropertyDeclaration
-                  // ts.SyntaxKind.MethodDeclaration
+                  case ts.SyntaxKind.PropertyDeclaration:
+                    handleVariable(node as ts.Identifier, 'Property');
+                    break;
+                  case ts.SyntaxKind.TypeAliasDeclaration:
+                    handleVariable(node as ts.Identifier, 'Type');
+                    break;
+
+                  case ts.SyntaxKind.VariableDeclaration:
+                    handleVariable(node as ts.Identifier, 'Variable');
+                    break;
+
                   default:
-                    handleVariable(node as ts.Identifier);
+                    handleVariable(node as ts.Identifier, 'Unknown Node');
                     break;
                 }
               } else if (parent && isDestructure(node)) {

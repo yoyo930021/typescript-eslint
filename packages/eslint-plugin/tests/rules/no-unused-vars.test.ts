@@ -788,6 +788,7 @@ export class Clazz {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'x',
+            type: 'Variable',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 1,
@@ -803,6 +804,7 @@ export class Clazz {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'x',
+            type: 'Variable',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 1,
@@ -825,6 +827,7 @@ export class Clazz {
           messageId: 'unused',
           data: {
             name: 'x',
+            type: 'Variable',
           },
           line: 1,
           column: 7,
@@ -839,6 +842,7 @@ export class Clazz {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'foo',
+            type: 'Function',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 1,
@@ -854,6 +858,7 @@ export class Clazz {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'Foo',
+            type: 'Type',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 1,
@@ -869,6 +874,7 @@ export class Clazz {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'Foo',
+            type: 'Interface',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 1,
@@ -884,6 +890,7 @@ export class Clazz {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'Foo',
+            type: 'Class',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 1,
@@ -903,6 +910,7 @@ export class Foo {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'foo',
+            type: 'Property',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 3,
@@ -922,6 +930,7 @@ export class Foo {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'foo',
+            type: 'Method',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 3,
@@ -937,6 +946,7 @@ export class Foo {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'Foo',
+            type: 'Enum',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 1,
@@ -960,6 +970,7 @@ export function foo(a, b) {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'a',
+            type: 'Parameter',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 2,
@@ -979,6 +990,7 @@ export function foo(a: string, b: string) {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'a',
+            type: 'Parameter',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 2,
@@ -1005,6 +1017,7 @@ export function foo(a, b) {
           messageId: 'unused',
           data: {
             name: 'a',
+            type: 'Parameter',
           },
           line: 2,
           column: 21,
@@ -1025,6 +1038,7 @@ export class Clazz {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'a',
+            type: 'Parameter',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 3,
@@ -1044,6 +1058,7 @@ export class Clazz {
           messageId: 'unusedWithIgnorePattern',
           data: {
             name: 'a',
+            type: 'Parameter',
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 3,
