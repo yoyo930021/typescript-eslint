@@ -392,7 +392,9 @@ export function parseAndGenerateServices<
    * Convert the TypeScript AST to an ESTree-compatible one, and optionally preserve
    * mappings between converted and original AST nodes
    */
-  const { estree, astMaps } = convert(ast, extra, true);
+  const preserveNodeMaps =
+    typeof extra.preserveNodeMaps === 'boolean' ? extra.preserveNodeMaps : true;
+  const { estree, astMaps } = convert(ast, extra, preserveNodeMaps);
   /**
    * Even if TypeScript parsed the source code ok, and we had no problems converting the AST,
    * there may be other syntactic or semantic issues in the code that we can optionally report on.
