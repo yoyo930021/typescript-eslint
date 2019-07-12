@@ -80,6 +80,37 @@ class Foo {}
 new Foo();
     `,
     'class _Foo {}',
+    `
+export class Foo {
+  private foo: string;
+  bar() {
+    console.log(this.foo);
+  }
+}
+    `,
+    `
+export class Foo {
+  private _foo: string;
+}
+    `,
+    `
+export class Foo {
+  private foo() {};
+  bar() {
+    this.foo();
+  }
+}
+    `,
+    `
+export class Foo {
+  private _foo() {};
+}
+    `,
+    `
+enum Foo { a = 1 }
+console.log(Foo.a);
+    `,
+    'enum _Foo { a = 1 }',
 
     ////////////////
     // parameters //
@@ -816,6 +847,59 @@ export class Clazz {
           line: 1,
           column: 7,
           endColumn: 10,
+        },
+      ],
+    },
+    {
+      code: `
+export class Foo {
+  private foo: string;
+}
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 3,
+          column: 11,
+          endColumn: 14,
+        },
+      ],
+    },
+    {
+      code: `
+export class Foo {
+  private foo() {};
+}
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 3,
+          column: 11,
+          endColumn: 14,
+        },
+      ],
+    },
+    {
+      code: makeExternalModule('enum Foo { a = 1 }'),
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'Foo',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 6,
+          endColumn: 9,
         },
       ],
     },

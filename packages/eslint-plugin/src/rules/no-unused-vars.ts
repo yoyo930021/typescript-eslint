@@ -211,6 +211,9 @@ export default util.createRule<Options, MessageIds>({
                   // ts.SyntaxKind.InterfaceDeclaration
                   // ts.SyntaxKind.FunctionDeclaration
                   // ts.SyntaxKind.ClassDeclaration
+                  // ts.SyntaxKind.EnumDeclaration
+                  // ts.SyntaxKind.PropertyDeclaration
+                  // ts.SyntaxKind.MethodDeclaration
                   default:
                     handleVariable(node as ts.Identifier);
                     break;
