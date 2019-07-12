@@ -199,18 +199,20 @@ export default util.createRule<Options, MessageIds>({
               if (parent && node.kind === ts.SyntaxKind.Identifier) {
                 // is a single variable diagnostic
                 switch (parent.kind) {
-                  case ts.SyntaxKind.VariableDeclaration:
-                  case ts.SyntaxKind.TypeAliasDeclaration:
-                  case ts.SyntaxKind.InterfaceDeclaration:
-                  case ts.SyntaxKind.FunctionDeclaration:
-                    handleVariable(node as ts.Identifier);
-                    break;
-
                   case ts.SyntaxKind.Parameter:
                     handleParameter(
                       node as ts.Identifier,
                       parent as ts.ParameterDeclaration,
                     );
+                    break;
+
+                  // ts.SyntaxKind.VariableDeclaration
+                  // ts.SyntaxKind.TypeAliasDeclaration
+                  // ts.SyntaxKind.InterfaceDeclaration
+                  // ts.SyntaxKind.FunctionDeclaration
+                  // ts.SyntaxKind.ClassDeclaration
+                  default:
+                    handleVariable(node as ts.Identifier);
                     break;
                 }
               } else if (parent && isDestructure(node)) {

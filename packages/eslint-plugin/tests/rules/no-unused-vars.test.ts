@@ -21,6 +21,9 @@ const DEFAULT_IGNORED_REGEX = new RegExp(
 ).toString();
 ruleTester.run('no-unused-vars', rule, {
   valid: [
+    ///////////////
+    // variables //
+    ///////////////
     makeExternalModule('const _x = "unused"'),
     'export const x = "used";',
     `
@@ -72,6 +75,15 @@ const foo: Foo = {};
     `,
     'type _Foo = { a?: string };',
     'interface _Foo { a?: string };',
+    `
+class Foo {}
+new Foo();
+    `,
+    'class _Foo {}',
+
+    ////////////////
+    // parameters //
+    ////////////////
     `
 export function foo(a) {
   console.log(a);
@@ -693,6 +705,9 @@ export class Clazz {
     //     `,
   ],
   invalid: [
+    ///////////////
+    // variables //
+    ///////////////
     {
       code: makeExternalModule('const x = "unused"'),
       errors: [
@@ -749,6 +764,10 @@ export class Clazz {
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
           line: 1,
           column: 10,
           endColumn: 13,
@@ -760,6 +779,10 @@ export class Clazz {
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'Foo',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
           line: 1,
           column: 6,
           endColumn: 9,
@@ -771,12 +794,35 @@ export class Clazz {
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'Foo',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
           line: 1,
           column: 11,
           endColumn: 14,
         },
       ],
     },
+    {
+      code: makeExternalModule('class Foo {}'),
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'Foo',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 7,
+          endColumn: 10,
+        },
+      ],
+    },
+
+    ////////////////
+    // parameters //
+    ////////////////
     {
       code: `
 function foo(a, b) {
