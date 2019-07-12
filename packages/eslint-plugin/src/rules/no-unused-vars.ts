@@ -10,7 +10,6 @@ export type Options = [
       ignoredNamesRegex?: string | boolean;
     };
     arguments?: {
-      ignoredNamesRegex?: string | boolean;
       ignoreIfArgsAfterAreUsed?: boolean;
     };
   }
@@ -75,7 +74,6 @@ export default util.createRule<Options, MessageIds>({
         ignoredNamesRegex: DEFAULT_IGNORED_REGEX_STRING,
       },
       arguments: {
-        ignoredNamesRegex: DEFAULT_IGNORED_REGEX_STRING,
         ignoreIfArgsAfterAreUsed: false,
       },
     },
@@ -95,7 +93,6 @@ export default util.createRule<Options, MessageIds>({
         ignoredNames: getIgnoredNames(userOptions.variables),
       },
       arguments: {
-        ignoredNames: getIgnoredNames(userOptions.arguments),
         ignoreIfArgsAfterAreUsed:
           userOptions.arguments!.ignoreIfArgsAfterAreUsed || false,
       },
@@ -137,34 +134,22 @@ export default util.createRule<Options, MessageIds>({
       const name = identifier.getText();
       // regardless of if the paramter is ignored, track that it had a diagnostic fired on it
       unusedParameters.add(identifier);
-      const regex = options.arguments.ignoredNames;
-      if (regex && regex.test(name)) {
-        // is an ignored name
-        return;
-      }
+
+      /*
+      NOTE - Typescript will automatically ignore parameters that have a
+             leading underscore in their name. We cannot do anything about this.
+      */
 
       function report() {
         const node = parserServices.tsNodeToESTreeNodeMap.get(identifier);
-        if (regex) {
-          context.report({
-            node,
-            messageId: 'unusedWithIgnorePattern',
-            data: {
-              name,
-              type: 'Parameter',
-              pattern: regex.toString(),
-            },
-          });
-        } else {
-          context.report({
-            node,
-            messageId: 'unused',
-            data: {
-              name,
-              type: 'Parameter',
-            },
-          });
-        }
+        context.report({
+          node,
+          messageId: 'unused',
+          data: {
+            name,
+            type: 'Parameter',
+          },
+        });
       }
 
       const isLastParameter =

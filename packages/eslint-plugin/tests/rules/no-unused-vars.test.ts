@@ -1005,11 +1005,10 @@ export function foo(a, b) {
       `,
       errors: [
         {
-          messageId: 'unusedWithIgnorePattern',
+          messageId: 'unused',
           data: {
             name: 'a',
             type: 'Parameter',
-            pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 2,
           column: 21,
@@ -1025,33 +1024,6 @@ export function foo(a: string, b: string) {
       `,
       errors: [
         {
-          messageId: 'unusedWithIgnorePattern',
-          data: {
-            name: 'a',
-            type: 'Parameter',
-            pattern: DEFAULT_IGNORED_REGEX,
-          },
-          line: 2,
-          column: 21,
-          endColumn: 30,
-        },
-      ],
-    },
-    {
-      code: `
-export function foo(a, b) {
-  console.log(b);
-}
-      `,
-      options: [
-        {
-          arguments: {
-            ignoredNamesRegex: false,
-          },
-        },
-      ],
-      errors: [
-        {
           messageId: 'unused',
           data: {
             name: 'a',
@@ -1059,7 +1031,7 @@ export function foo(a, b) {
           },
           line: 2,
           column: 21,
-          endColumn: 22,
+          endColumn: 30,
         },
       ],
     },
@@ -1073,11 +1045,10 @@ export class Clazz {
       `,
       errors: [
         {
-          messageId: 'unusedWithIgnorePattern',
+          messageId: 'unused',
           data: {
             name: 'a',
             type: 'Parameter',
-            pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 3,
           column: 15,
@@ -1093,11 +1064,10 @@ export class Clazz {
       `,
       errors: [
         {
-          messageId: 'unusedWithIgnorePattern',
+          messageId: 'unused',
           data: {
             name: 'a',
             type: 'Parameter',
-            pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 3,
           column: 15,
