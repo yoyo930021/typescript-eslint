@@ -1,7 +1,13 @@
 import rule, {
   DEFAULT_IGNORED_REGEX_STRING,
+  Options,
+  MessageIds,
 } from '../../src/rules/no-unused-vars';
 import { RuleTester, getFixturesRootDir } from '../RuleTester';
+import {
+  InvalidTestCase,
+  ValidTestCase,
+} from '@typescript-eslint/experimental-utils/dist/ts-eslint';
 
 const rootDir = getFixturesRootDir();
 const ruleTester = new RuleTester({
@@ -12,44 +18,62 @@ const ruleTester = new RuleTester({
   parser: '@typescript-eslint/parser',
 });
 
-function makeExternalModule(code: string): string {
-  return `${code}\nexport const __externalModule = 1;`;
+const hasExport = /^export/;
+function makeExternalModule<
+  T extends ValidTestCase<Options> | InvalidTestCase<MessageIds, Options>
+>(tests: T[]): T[] {
+  tests.forEach(t => {
+    if (!hasExport.test(t.code)) {
+      t.code = `${t.code}\nexport const __externalModule = 1;`;
+    }
+  });
+  return tests;
 }
 
 const DEFAULT_IGNORED_REGEX = new RegExp(
   DEFAULT_IGNORED_REGEX_STRING,
 ).toString();
 ruleTester.run('no-unused-vars', rule, {
-  valid: [
+  valid: makeExternalModule([
     ///////////////
     // variables //
     ///////////////
-    makeExternalModule('const _x = "unused"'),
-    'export const x = "used";',
-    `
+    { code: 'const _x = "unused"' },
+    { code: 'export const x = "used";' },
+    {
+      code: `
 const x = "used";
 console.log(x);
-    `,
-    `
+      `,
+    },
+    {
+      code: `
 import defaultImp from "thing";
 console.log(defaultImp);
-    `,
-    `
+      `,
+    },
+    {
+      code: `
 import { named } from "thing";
 console.log(named);
-    `,
-    `
+      `,
+    },
+    {
+      code: `
 import defaultImp, { named } from "thing";
 console.log(defaultImp, named);
-    `,
-    'import _defaultImp from "thing";',
-    'import { named as _named } from "thing";',
-    'import _default, { named as _named } from "thing";',
-    `
+      `,
+    },
+    { code: 'import _defaultImp from "thing";' },
+    { code: 'import { named as _named } from "thing";' },
+    { code: 'import _default, { named as _named } from "thing";' },
+    {
+      code: `
 function foo() {}
 foo();
-    `,
-    'function _foo() {}',
+      `,
+    },
+    { code: 'function _foo() {}' },
     {
       // decorators require the tsconfig compiler option
       // or else they are marked as unused because it is not a valid usage
@@ -65,61 +89,79 @@ export class Foo {}
         tsconfigRootDir: rootDir,
       },
     },
-    `
+    {
+      code: `
 type Foo = { a?: string };
-const foo: Foo = {};
-    `,
-    `
+export const foo: Foo = {};
+      `,
+    },
+    {
+      code: `
 interface Foo { a?: string };
-const foo: Foo = {};
-    `,
-    'type _Foo = { a?: string };',
-    'interface _Foo { a?: string };',
-    `
+export const foo: Foo = {};
+      `,
+    },
+    { code: 'type _Foo = { a?: string };' },
+    { code: 'interface _Foo { a?: string };' },
+    {
+      code: `
 class Foo {}
 new Foo();
-    `,
-    'class _Foo {}',
-    `
+      `,
+    },
+    { code: 'class _Foo {}' },
+    {
+      code: `
 export class Foo {
   private foo: string;
   bar() {
     console.log(this.foo);
   }
 }
-    `,
-    `
+      `,
+    },
+    {
+      code: `
 export class Foo {
   private _foo: string;
 }
-    `,
-    `
+      `,
+    },
+    {
+      code: `
 export class Foo {
   private foo() {};
   bar() {
     this.foo();
   }
 }
-    `,
-    `
+      `,
+    },
+    {
+      code: `
 export class Foo {
   private _foo() {};
 }
-    `,
-    `
+      `,
+    },
+    {
+      code: `
 enum Foo { a = 1 }
 console.log(Foo.a);
-    `,
-    'enum _Foo { a = 1 }',
+      `,
+    },
+    { code: 'enum _Foo { a = 1 }' },
 
     ////////////////
     // parameters //
     ////////////////
-    `
+    {
+      code: `
 export function foo(a) {
   console.log(a);
 }
-    `,
+      `,
+    },
     {
       code: `
 export function foo(a: string, b: string) {
@@ -734,13 +776,13 @@ export class Clazz {
     //   }
     // }
     //     `,
-  ],
-  invalid: [
+  ]),
+  invalid: makeExternalModule([
     ///////////////
     // variables //
     ///////////////
     {
-      code: makeExternalModule('const x = "unused"'),
+      code: 'const x = "unused"',
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
@@ -755,7 +797,7 @@ export class Clazz {
       ],
     },
     {
-      code: makeExternalModule('const x: string = "unused"'),
+      code: 'const x: string = "unused"',
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
@@ -770,7 +812,7 @@ export class Clazz {
       ],
     },
     {
-      code: makeExternalModule('const x = "unused"'),
+      code: 'const x = "unused"',
       options: [
         {
           variables: {
@@ -791,7 +833,7 @@ export class Clazz {
       ],
     },
     {
-      code: makeExternalModule('function foo() {}'),
+      code: 'function foo() {}',
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
@@ -806,7 +848,7 @@ export class Clazz {
       ],
     },
     {
-      code: makeExternalModule('type Foo = { a?: string };'),
+      code: 'type Foo = { a?: string };',
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
@@ -821,7 +863,7 @@ export class Clazz {
       ],
     },
     {
-      code: makeExternalModule('interface Foo { a?: string };'),
+      code: 'interface Foo { a?: string };',
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
@@ -836,7 +878,7 @@ export class Clazz {
       ],
     },
     {
-      code: makeExternalModule('class Foo {}'),
+      code: 'class Foo {}',
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
@@ -889,7 +931,7 @@ export class Foo {
       ],
     },
     {
-      code: makeExternalModule('enum Foo { a = 1 }'),
+      code: 'enum Foo { a = 1 }',
       errors: [
         {
           messageId: 'unusedWithIgnorePattern',
@@ -909,7 +951,7 @@ export class Foo {
     ////////////////
     {
       code: `
-function foo(a, b) {
+export function foo(a, b) {
   console.log(b);
 }
       `,
@@ -921,14 +963,14 @@ function foo(a, b) {
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 2,
-          column: 14,
-          endColumn: 15,
+          column: 21,
+          endColumn: 22,
         },
       ],
     },
     {
       code: `
-function foo(a: string, b: string) {
+export function foo(a: string, b: string) {
   console.log(b);
 }
       `,
@@ -940,14 +982,14 @@ function foo(a: string, b: string) {
             pattern: DEFAULT_IGNORED_REGEX,
           },
           line: 2,
-          column: 14,
-          endColumn: 23,
+          column: 21,
+          endColumn: 30,
         },
       ],
     },
     {
       code: `
-function foo(a, b) {
+export function foo(a, b) {
   console.log(b);
 }
       `,
@@ -965,8 +1007,8 @@ function foo(a, b) {
             name: 'a',
           },
           line: 2,
-          column: 14,
-          endColumn: 15,
+          column: 21,
+          endColumn: 22,
         },
       ],
     },
@@ -1044,7 +1086,7 @@ export class Clazz {
     //     },
     //   ],
     // },
-  ],
+  ]),
 
   //   invalid: [
   //     {

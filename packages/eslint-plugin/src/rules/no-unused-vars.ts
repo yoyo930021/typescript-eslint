@@ -2,7 +2,7 @@ import { TSESTree } from '@typescript-eslint/typescript-estree';
 import ts from 'typescript';
 import * as util from '../util';
 
-type Options = [
+export type Options = [
   {
     variables?: {
       ignoredNamesRegex?: string | boolean;
@@ -13,7 +13,7 @@ type Options = [
     };
   }
 ];
-type MessageIds = 'unused' | 'unusedWithIgnorePattern';
+export type MessageIds = 'unused' | 'unusedWithIgnorePattern';
 
 export const DEFAULT_IGNORED_REGEX_STRING = '^_';
 const IGNORED_NAMES_REGEX = {
