@@ -1,8 +1,9 @@
 import rule, {
   DEFAULT_IGNORED_REGEX_STRING,
 } from '../../src/rules/no-unused-vars';
-import { RuleTester } from '../RuleTester';
+import { RuleTester, getFixturesRootDir } from '../RuleTester';
 
+const rootDir = getFixturesRootDir();
 const ruleTester = new RuleTester({
   parserOptions: {
     ecmaVersion: 2018,
@@ -21,6 +22,56 @@ const DEFAULT_IGNORED_REGEX = new RegExp(
 ruleTester.run('no-unused-vars', rule, {
   valid: [
     makeExternalModule('const _x = "unused"'),
+    'export const x = "used";',
+    `
+const x = "used";
+console.log(x);
+    `,
+    `
+import defaultImp from "thing";
+console.log(defaultImp);
+    `,
+    `
+import { named } from "thing";
+console.log(named);
+    `,
+    `
+import defaultImp, { named } from "thing";
+console.log(defaultImp, named);
+    `,
+    'import _defaultImp from "thing";',
+    'import { named as _named } from "thing";',
+    'import _default, { named as _named } from "thing";',
+    `
+function foo() {}
+foo();
+    `,
+    'function _foo() {}',
+    {
+      // decorators require the tsconfig compiler option
+      // or else they are marked as unused because it is not a valid usage
+      code: `
+function decorator(_clazz: any) {}
+
+@decorator
+export class Foo {}
+      `,
+      parser: require.resolve('@typescript-eslint/parser'),
+      parserOptions: {
+        project: './tsconfig.json',
+        tsconfigRootDir: rootDir,
+      },
+    },
+    `
+type Foo = { a?: string };
+const foo: Foo = {};
+    `,
+    `
+interface Foo { a?: string };
+const foo: Foo = {};
+    `,
+    'type _Foo = { a?: string };',
+    'interface _Foo { a?: string };',
     `
 export function foo(a) {
   console.log(a);
@@ -694,6 +745,39 @@ export class Clazz {
       ],
     },
     {
+      code: makeExternalModule('function foo() {}'),
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          line: 1,
+          column: 10,
+          endColumn: 13,
+        },
+      ],
+    },
+    {
+      code: makeExternalModule('type Foo = { a?: string };'),
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          line: 1,
+          column: 6,
+          endColumn: 9,
+        },
+      ],
+    },
+    {
+      code: makeExternalModule('interface Foo { a?: string };'),
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          line: 1,
+          column: 11,
+          endColumn: 14,
+        },
+      ],
+    },
+    {
       code: `
 function foo(a, b) {
   console.log(b);
@@ -796,6 +880,40 @@ export class Clazz {
         },
       ],
     },
+    // TODO - support diagnostic 6192
+    // {
+    //   code: 'import defaultImp from "thing";',
+    //   errors: [
+    //     {
+    //       messageId: 'unusedWithIgnorePattern',
+    //       line: 1,
+    //       column: 7,
+    //       endColumn: 17,
+    //     },
+    //   ],
+    // },
+    // {
+    //   code: 'import { named } from "thing";',
+    //   errors: [
+    //     {
+    //       messageId: 'unusedWithIgnorePattern',
+    //       line: 1,
+    //       column: 7,
+    //       endColumn: 1,
+    //     },
+    //   ],
+    // },
+    // {
+    //   code: 'import default, { named } from "thing";',
+    //   errors: [
+    //     {
+    //       messageId: 'unusedWithIgnorePattern',
+    //       line: 1,
+    //       column: 7,
+    //       endColumn: 17,
+    //     },
+    //   ],
+    // },
   ],
 
   //   invalid: [

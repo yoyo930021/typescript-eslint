@@ -32,7 +32,7 @@ export default util.createRule<Options, MessageIds>({
   meta: {
     type: 'problem',
     docs: {
-      description: 'Disallow unused variables and arguments',
+      description: 'Disallow unused variables and arguments.',
       category: 'Best Practices',
       recommended: 'warn',
     },
@@ -200,6 +200,9 @@ export default util.createRule<Options, MessageIds>({
                 // is a single variable diagnostic
                 switch (parent.kind) {
                   case ts.SyntaxKind.VariableDeclaration:
+                  case ts.SyntaxKind.TypeAliasDeclaration:
+                  case ts.SyntaxKind.InterfaceDeclaration:
+                  case ts.SyntaxKind.FunctionDeclaration:
                     handleVariable(node as ts.Identifier);
                     break;
 
