@@ -1,3 +1,5 @@
+/* eslint-disable no-fallthrough */
+
 import { TSESTree } from '@typescript-eslint/typescript-estree';
 import ts from 'typescript';
 import * as util from '../util';
@@ -13,7 +15,7 @@ export type Options = [
     };
   }
 ];
-export type MessageIds = 'unused' | 'unusedWithIgnorePattern';
+export type MessageIds = 'unused' | 'unusedWithIgnorePattern' | 'unusedImport';
 
 export const DEFAULT_IGNORED_REGEX_STRING = '^_';
 const IGNORED_NAMES_REGEX = {
@@ -64,6 +66,7 @@ export default util.createRule<Options, MessageIds>({
       unused: "{{type}} '{{name}}' is declared but its value is never read.",
       unusedWithIgnorePattern:
         "{{type}} '{{name}}' is declared but its value is never read. Allowed unused names must match {{pattern}}",
+      unusedImport: 'All imports in import declaration are unused.',
     },
   },
   defaultOptions: [
@@ -80,6 +83,7 @@ export default util.createRule<Options, MessageIds>({
   create(context, [userOptions]) {
     const parserServices = util.getParserServices(context, true);
     const tsProgram = parserServices.program;
+    const afterAllDiagnosticsCallbacks: (() => void)[] = [];
 
     function getIgnoredNames(opt?: { ignoredNamesRegex?: string | boolean }) {
       return opt && typeof opt.ignoredNamesRegex === 'string'
@@ -97,7 +101,7 @@ export default util.createRule<Options, MessageIds>({
       },
     };
 
-    function handleVariable(identifier: ts.Identifier, type: string): void {
+    function handleIdentifier(identifier: ts.Identifier, type: string): void {
       const node = parserServices.tsNodeToESTreeNodeMap.get(identifier);
       const regex = options.variables.ignoredNames;
       const name = identifier.getText();
@@ -126,7 +130,7 @@ export default util.createRule<Options, MessageIds>({
     }
 
     const unusedParameters = new Set<ts.Identifier>();
-    function handleParameter(
+    function handleParameterDeclaration(
       identifier: ts.Identifier,
       parent: ts.ParameterDeclaration,
     ): void {
@@ -188,7 +192,20 @@ export default util.createRule<Options, MessageIds>({
       }
     }
 
-    const afterAllDiagnosticsCallbacks: (() => void)[] = [];
+    function handleImportDeclaration(parent: ts.ImportDeclaration): void {
+      // the entire import statement is unused
+
+      /*
+      NOTE - Typescript will automatically ignore imports that have a
+            leading underscore in their name. We cannot do anything about this.
+      */
+
+      context.report({
+        messageId: 'unusedImport',
+        node: parserServices.tsNodeToESTreeNodeMap.get(parent),
+      });
+    }
+
     return {
       'Program:exit'(program: TSESTree.Node) {
         const tsNode = parserServices.esTreeNodeToTSNodeMap.get(program);
@@ -197,55 +214,77 @@ export default util.createRule<Options, MessageIds>({
 
         diagnostics.forEach(diag => {
           if (isUnusedDiagnostic(diag.code)) {
-            if (diag.start) {
+            if (diag.start !== undefined) {
               const node = util.getTokenAtPosition(sourceFile, diag.start);
               const parent = node.parent;
-              if (parent && node.kind === ts.SyntaxKind.Identifier) {
+              if (node.kind === ts.SyntaxKind.Identifier) {
                 // is a single variable diagnostic
                 switch (parent.kind) {
                   case ts.SyntaxKind.ClassDeclaration:
-                    handleVariable(node as ts.Identifier, 'Class');
+                    handleIdentifier(node as ts.Identifier, 'Class');
                     break;
 
                   case ts.SyntaxKind.EnumDeclaration:
-                    handleVariable(node as ts.Identifier, 'Enum');
+                    handleIdentifier(node as ts.Identifier, 'Enum');
                     break;
 
                   case ts.SyntaxKind.FunctionDeclaration:
-                    handleVariable(node as ts.Identifier, 'Function');
+                    handleIdentifier(node as ts.Identifier, 'Function');
+                    break;
+
+                  // this won't happen because there are specific nodes that wrap up named/default import identifiers
+                  // case ts.SyntaxKind.ImportDeclaration:
+
+                  // import equals is always treated as a variable
+                  case ts.SyntaxKind.ImportEqualsDeclaration:
+                  // the default import is NOT used, but a named import is used
+                  case ts.SyntaxKind.ImportClause:
+                  // a named import is NOT used, but either another named import, or the default import is used
+                  case ts.SyntaxKind.ImportSpecifier:
+                  // a namespace import is NOT used, but the default import is used
+                  case ts.SyntaxKind.NamespaceImport:
+                    handleIdentifier(node as ts.Identifier, 'Import');
                     break;
 
                   case ts.SyntaxKind.InterfaceDeclaration:
-                    handleVariable(node as ts.Identifier, 'Interface');
+                    handleIdentifier(node as ts.Identifier, 'Interface');
                     break;
 
                   case ts.SyntaxKind.MethodDeclaration:
-                    handleVariable(node as ts.Identifier, 'Method');
+                    handleIdentifier(node as ts.Identifier, 'Method');
                     break;
 
                   case ts.SyntaxKind.Parameter:
-                    handleParameter(
+                    handleParameterDeclaration(
                       node as ts.Identifier,
                       parent as ts.ParameterDeclaration,
                     );
                     break;
 
                   case ts.SyntaxKind.PropertyDeclaration:
-                    handleVariable(node as ts.Identifier, 'Property');
+                    handleIdentifier(node as ts.Identifier, 'Property');
                     break;
+
                   case ts.SyntaxKind.TypeAliasDeclaration:
-                    handleVariable(node as ts.Identifier, 'Type');
+                    handleIdentifier(node as ts.Identifier, 'Type');
                     break;
 
                   case ts.SyntaxKind.VariableDeclaration:
-                    handleVariable(node as ts.Identifier, 'Variable');
+                    handleIdentifier(node as ts.Identifier, 'Variable');
                     break;
 
                   default:
-                    handleVariable(node as ts.Identifier, 'Unknown Node');
-                    break;
+                    throw new Error(`Unknown node with kind ${parent.kind}.`);
+                  // TODO - should we just handle this gracefully?
+                  // handleVariable(node as ts.Identifier, 'Unknown Node');
+                  // break;
                 }
-              } else if (parent && isDestructure(node)) {
+              } else if (
+                node.kind === ts.SyntaxKind.ImportKeyword &&
+                parent.kind === ts.SyntaxKind.ImportDeclaration
+              ) {
+                handleImportDeclaration(parent as ts.ImportDeclaration);
+              } else if (isDestructure(node)) {
                 // TODO - support destructuring
               }
             }

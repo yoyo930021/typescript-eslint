@@ -18,7 +18,8 @@ const ruleTester = new RuleTester({
   parser: '@typescript-eslint/parser',
 });
 
-const hasExport = /^export/;
+const hasExport = /^export/m;
+// const hasImport = /^import .+? from ['"]/m;
 function makeExternalModule<
   T extends ValidTestCase<Options> | InvalidTestCase<MessageIds, Options>
 >(tests: T[]): T[] {
@@ -35,9 +36,9 @@ const DEFAULT_IGNORED_REGEX = new RegExp(
 ).toString();
 ruleTester.run('no-unused-vars', rule, {
   valid: makeExternalModule([
-    ///////////////
-    // variables //
-    ///////////////
+    ///////////////////////
+    // #region variables //
+    ///////////////////////
     { code: 'const _x = "unused"' },
     { code: 'export const x = "used";' },
     {
@@ -46,27 +47,6 @@ const x = "used";
 console.log(x);
       `,
     },
-    {
-      code: `
-import defaultImp from "thing";
-console.log(defaultImp);
-      `,
-    },
-    {
-      code: `
-import { named } from "thing";
-console.log(named);
-      `,
-    },
-    {
-      code: `
-import defaultImp, { named } from "thing";
-console.log(defaultImp, named);
-      `,
-    },
-    { code: 'import _defaultImp from "thing";' },
-    { code: 'import { named as _named } from "thing";' },
-    { code: 'import _default, { named as _named } from "thing";' },
     {
       code: `
 function foo() {}
@@ -151,10 +131,12 @@ console.log(Foo.a);
       `,
     },
     { code: 'enum _Foo { a = 1 }' },
+    // #endregion variables //
+    //////////////////////////
 
-    ////////////////
-    // parameters //
-    ////////////////
+    ////////////////////////
+    // #region parameters //
+    ////////////////////////
     {
       code: `
 export function foo(a) {
@@ -190,6 +172,59 @@ export class Clazz {
         },
       ],
     },
+    { code: 'export function foo(_a) {}' },
+    // #endregion parameters //
+    ///////////////////////////
+
+    ////////////////////
+    // #region import //
+    ////////////////////
+    {
+      code: `
+import defaultImp from "thing";
+console.log(defaultImp);
+      `,
+    },
+    {
+      code: `
+import { named } from "thing";
+console.log(named);
+      `,
+    },
+    {
+      code: `
+import defaultImp, { named } from "thing";
+console.log(defaultImp, named);
+      `,
+    },
+    {
+      code: `
+import defaultImp = require("thing");
+console.log(defaultImp, named);
+      `,
+    },
+    {
+      code: `
+import * as namespace from "thing";
+console.log(namespace);
+      `,
+    },
+    {
+      code: `
+import defaultImp, * as namespace from "thing";
+console.log(defaultImp, namespace);
+      `,
+    },
+    { code: 'import _defaultImp from "thing";' },
+    { code: 'import { named as _named } from "thing";' },
+    { code: 'import _defaultImp, { named as _named } from "thing";' },
+    { code: 'import _defaultImp = require("thing");' },
+    { code: 'import * as _namespace from "thing";' },
+    { code: 'import _defaultImp, * as _namespace from "thing";' },
+    // #endregion import //
+    ///////////////////////
+
+    // #region old valid tests
     //     `
     // import { ClassDecoratorFactory } from 'decorators';
     // @ClassDecoratorFactory()
@@ -776,11 +811,12 @@ export class Clazz {
     //   }
     // }
     //     `,
+    // #endregion old valid test
   ]),
   invalid: makeExternalModule([
-    ///////////////
-    // variables //
-    ///////////////
+    ///////////////////////
+    // #region variables //
+    ///////////////////////
     {
       code: 'const x = "unused"',
       errors: [
@@ -955,10 +991,12 @@ export class Foo {
         },
       ],
     },
+    // #endregion variables //
+    //////////////////////////
 
-    ////////////////
-    // parameters //
-    ////////////////
+    ////////////////////////
+    // #region parameters //
+    ////////////////////////
     {
       code: `
 export function foo(a, b) {
@@ -1067,317 +1105,458 @@ export class Clazz {
         },
       ],
     },
-    // TODO - support diagnostic 6192
-    // {
-    //   code: 'import defaultImp from "thing";',
-    //   errors: [
+    // #endregion parameters //
+    ///////////////////////////
+
+    ////////////////////
+    // #region import //
+    ////////////////////
+    {
+      code: 'import foo = require("test")',
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            type: 'Import',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 8,
+          endColumn: 11,
+        },
+      ],
+    },
+    {
+      code: 'import defaultImp from "thing";',
+      errors: [
+        {
+          messageId: 'unusedImport',
+          line: 1,
+          column: 1,
+          endColumn: 32,
+        },
+      ],
+    },
+    {
+      code: 'import { named } from "thing";',
+      errors: [
+        {
+          messageId: 'unusedImport',
+          line: 1,
+          column: 1,
+          endColumn: 31,
+        },
+      ],
+    },
+    {
+      code: 'import * as namespace from "thing";',
+      errors: [
+        {
+          messageId: 'unusedImport',
+          line: 1,
+          column: 1,
+          endColumn: 36,
+        },
+      ],
+    },
+    {
+      code: 'import defaultImp, { named } from "thing";',
+      errors: [
+        {
+          messageId: 'unusedImport',
+          line: 1,
+          column: 1,
+          endColumn: 43,
+        },
+      ],
+    },
+    {
+      code: 'import defaultImp, * as namespace from "thing";',
+      errors: [
+        {
+          messageId: 'unusedImport',
+          line: 1,
+          column: 1,
+          endColumn: 48,
+        },
+      ],
+    },
+    {
+      code: `
+import defaultImp, { named } from "thing";
+console.log(named);
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'defaultImp',
+            type: 'Import',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 8,
+          endColumn: 18,
+        },
+      ],
+    },
+    {
+      code: `
+import defaultImp, * as named from "thing";
+console.log(named);
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'defaultImp',
+            type: 'Import',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 8,
+          endColumn: 18,
+        },
+      ],
+    },
+    {
+      code: `
+import defaultImp, * as named from "thing";
+console.log(defaultImp);
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'named',
+            type: 'Import',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 25,
+          endColumn: 30,
+        },
+      ],
+    },
+    {
+      code: `
+import defaultImp, { named } from "thing";
+console.log(defaultImp);
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'named',
+            type: 'Import',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 22,
+          endColumn: 27,
+        },
+      ],
+    },
+    {
+      code: `
+import { named1, named2 } from "thing";
+console.log(named1);
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'named2',
+            type: 'Import',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 18,
+          endColumn: 24,
+        },
+      ],
+    },
+    // #endregion import //
+    ///////////////////////
+
+    // #region old invalid tests
     //     {
-    //       messageId: 'unusedWithIgnorePattern',
-    //       line: 1,
-    //       column: 7,
-    //       endColumn: 17,
+    //       code: `
+    // import { ClassDecoratorFactory } from 'decorators';
+    // export class Foo {}
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'ClassDecoratorFactory' is defined but never used.",
+    //           line: 2,
+    //           column: 10,
+    //         },
+    //       ]),
     //     },
-    //   ],
-    // },
-    // {
-    //   code: 'import { named } from "thing";',
-    //   errors: [
     //     {
-    //       messageId: 'unusedWithIgnorePattern',
-    //       line: 1,
-    //       column: 7,
-    //       endColumn: 1,
+    //       code: `
+    // import { Foo, Bar } from 'foo';
+    // function baz<Foo>() {}
+    // baz<Bar>()
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Foo' is defined but never used.",
+    //           line: 2,
+    //           column: 10,
+    //         },
+    //       ]),
     //     },
-    //   ],
-    // },
-    // {
-    //   code: 'import default, { named } from "thing";',
-    //   errors: [
     //     {
-    //       messageId: 'unusedWithIgnorePattern',
-    //       line: 1,
-    //       column: 7,
-    //       endColumn: 17,
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // const a: string = 'hello';
+    // console.log(a);
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Nullable' is defined but never used.",
+    //           line: 2,
+    //           column: 10,
+    //         },
+    //       ]),
     //     },
-    //   ],
-    // },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // import { SomeOther } from 'other';
+    // const a: Nullable<string> = 'hello';
+    // console.log(a);
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'SomeOther' is defined but never used.",
+    //           line: 3,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // import { Another } from 'some';
+    // class A {
+    //     do = (a: Nullable) => { console.log(a); }
+    // }
+    // new A();
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Another' is defined but never used.",
+    //           line: 3,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // import { Another } from 'some';
+    // class A {
+    //     do(a: Nullable) { console.log(a); }
+    // }
+    // new A();
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Another' is defined but never used.",
+    //           line: 3,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // import { Another } from 'some';
+    // class A {
+    //     do(): Nullable { return null; }
+    // }
+    // new A();
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Another' is defined but never used.",
+    //           line: 3,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // import { Another } from 'some';
+    // interface A {
+    //     do(a: Nullable);
+    // }
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Another' is defined but never used.",
+    //           line: 3,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // import { Another } from 'some';
+    // interface A {
+    //     other: Nullable;
+    // }
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Another' is defined but never used.",
+    //           line: 3,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // function foo(a: string) { console.log(a); }
+    // foo();
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Nullable' is defined but never used.",
+    //           line: 2,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // function foo(): string | null { return null; }
+    // foo();
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'Nullable' is defined but never used.",
+    //           line: 2,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // import { SomeOther } from 'some';
+    // import { Another } from 'some';
+    // class A extends Nullable {
+    //     other: Nullable<Another>;
+    // }
+    // new A();
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'SomeOther' is defined but never used.",
+    //           line: 3,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import { Nullable } from 'nullable';
+    // import { SomeOther } from 'some';
+    // import { Another } from 'some';
+    // abstract class A extends Nullable {
+    //     other: Nullable<Another>;
+    // }
+    // new A();
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'SomeOther' is defined but never used.",
+    //           line: 3,
+    //           column: 10,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // enum FormFieldIds {
+    //     PHONE = 'phone',
+    //     EMAIL = 'email',
+    // }
+    //             `,
+    //       errors: error([
+    //         {
+    //           message: "'FormFieldIds' is defined but never used.",
+    //           line: 2,
+    //           column: 6,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import test from 'test';
+    // import baz from 'baz';
+    // export interface Bar extends baz.test {}
+    //     `,
+    //       errors: error([
+    //         {
+    //           message: "'test' is defined but never used.",
+    //           line: 2,
+    //           column: 8,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import test from 'test';
+    // import baz from 'baz';
+    // export interface Bar extends baz().test {}
+    //     `,
+    //       errors: error([
+    //         {
+    //           message: "'test' is defined but never used.",
+    //           line: 2,
+    //           column: 8,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import test from 'test';
+    // import baz from 'baz';
+    // export class Bar implements baz.test {}
+    //     `,
+    //       errors: error([
+    //         {
+    //           message: "'test' is defined but never used.",
+    //           line: 2,
+    //           column: 8,
+    //         },
+    //       ]),
+    //     },
+    //     {
+    //       code: `
+    // import test from 'test';
+    // import baz from 'baz';
+    // export class Bar implements baz().test {}
+    //     `,
+    //       errors: error([
+    //         {
+    //           message: "'test' is defined but never used.",
+    //           line: 2,
+    //           column: 8,
+    //         },
+    //       ]),
+    //     },
+    //  ],
+    // #endregion old invalid tests
   ]),
-
-  //   invalid: [
-  //     {
-  //       code: `
-  // import { ClassDecoratorFactory } from 'decorators';
-  // export class Foo {}
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'ClassDecoratorFactory' is defined but never used.",
-  //           line: 2,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Foo, Bar } from 'foo';
-  // function baz<Foo>() {}
-  // baz<Bar>()
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Foo' is defined but never used.",
-  //           line: 2,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // const a: string = 'hello';
-  // console.log(a);
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Nullable' is defined but never used.",
-  //           line: 2,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // import { SomeOther } from 'other';
-  // const a: Nullable<string> = 'hello';
-  // console.log(a);
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'SomeOther' is defined but never used.",
-  //           line: 3,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // import { Another } from 'some';
-  // class A {
-  //     do = (a: Nullable) => { console.log(a); }
-  // }
-  // new A();
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Another' is defined but never used.",
-  //           line: 3,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // import { Another } from 'some';
-  // class A {
-  //     do(a: Nullable) { console.log(a); }
-  // }
-  // new A();
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Another' is defined but never used.",
-  //           line: 3,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // import { Another } from 'some';
-  // class A {
-  //     do(): Nullable { return null; }
-  // }
-  // new A();
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Another' is defined but never used.",
-  //           line: 3,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // import { Another } from 'some';
-  // interface A {
-  //     do(a: Nullable);
-  // }
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Another' is defined but never used.",
-  //           line: 3,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // import { Another } from 'some';
-  // interface A {
-  //     other: Nullable;
-  // }
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Another' is defined but never used.",
-  //           line: 3,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // function foo(a: string) { console.log(a); }
-  // foo();
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Nullable' is defined but never used.",
-  //           line: 2,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // function foo(): string | null { return null; }
-  // foo();
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'Nullable' is defined but never used.",
-  //           line: 2,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // import { SomeOther } from 'some';
-  // import { Another } from 'some';
-  // class A extends Nullable {
-  //     other: Nullable<Another>;
-  // }
-  // new A();
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'SomeOther' is defined but never used.",
-  //           line: 3,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import { Nullable } from 'nullable';
-  // import { SomeOther } from 'some';
-  // import { Another } from 'some';
-  // abstract class A extends Nullable {
-  //     other: Nullable<Another>;
-  // }
-  // new A();
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'SomeOther' is defined but never used.",
-  //           line: 3,
-  //           column: 10,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // enum FormFieldIds {
-  //     PHONE = 'phone',
-  //     EMAIL = 'email',
-  // }
-  //             `,
-  //       errors: error([
-  //         {
-  //           message: "'FormFieldIds' is defined but never used.",
-  //           line: 2,
-  //           column: 6,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import test from 'test';
-  // import baz from 'baz';
-  // export interface Bar extends baz.test {}
-  //     `,
-  //       errors: error([
-  //         {
-  //           message: "'test' is defined but never used.",
-  //           line: 2,
-  //           column: 8,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import test from 'test';
-  // import baz from 'baz';
-  // export interface Bar extends baz().test {}
-  //     `,
-  //       errors: error([
-  //         {
-  //           message: "'test' is defined but never used.",
-  //           line: 2,
-  //           column: 8,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import test from 'test';
-  // import baz from 'baz';
-  // export class Bar implements baz.test {}
-  //     `,
-  //       errors: error([
-  //         {
-  //           message: "'test' is defined but never used.",
-  //           line: 2,
-  //           column: 8,
-  //         },
-  //       ]),
-  //     },
-  //     {
-  //       code: `
-  // import test from 'test';
-  // import baz from 'baz';
-  // export class Bar implements baz().test {}
-  //     `,
-  //       errors: error([
-  //         {
-  //           message: "'test' is defined but never used.",
-  //           line: 2,
-  //           column: 8,
-  //         },
-  //       ]),
-  //     },
-  //  ],
 });
