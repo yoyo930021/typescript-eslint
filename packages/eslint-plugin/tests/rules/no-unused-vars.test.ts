@@ -36,6 +36,12 @@ const DEFAULT_IGNORED_REGEX = new RegExp(
 ).toString();
 ruleTester.run('no-unused-vars', rule, {
   valid: makeExternalModule([
+    {
+      code: `
+const {a: _a, b} = c;
+console.log(a, b);
+      `,
+    },
     ///////////////////////
     // #region variables //
     ///////////////////////
@@ -131,6 +137,46 @@ console.log(Foo.a);
       `,
     },
     { code: 'enum _Foo { a = 1 }' },
+    { code: 'export const {a, b} = c;' },
+    {
+      code: `
+const {a, b: {c}} = d;
+console.log(a, c);
+      `,
+    },
+    {
+      code: `
+const {a, b} = c;
+console.log(a, b);
+      `,
+    },
+    {
+      code: `
+const {a: _a, b} = c;
+console.log(b);
+      `,
+    },
+    { code: `const {a: _a, b: _b} = c;` },
+    { code: 'export const [a, b] = c;' },
+    {
+      code: `
+const [a, b] = c;
+console.log(a, b);
+      `,
+    },
+    {
+      code: `
+const [a, [b]] = c;
+console.log(a, b);
+      `,
+    },
+    {
+      code: `
+const [_a, b] = c;
+console.log(b);
+      `,
+    },
+    { code: `const [_a, _b] = c;` },
     // #endregion variables //
     //////////////////////////
 
@@ -988,6 +1034,211 @@ export class Foo {
           line: 1,
           column: 6,
           endColumn: 9,
+        },
+      ],
+    },
+    {
+      code: `
+const {foo, bar} = baz;
+console.log(foo);
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'bar',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 13,
+          endColumn: 16,
+        },
+      ],
+    },
+    {
+      code: `
+const [foo, bar] = baz;
+console.log(foo);
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'bar',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 13,
+          endColumn: 16,
+        },
+      ],
+    },
+    {
+      code: 'const {foo, bar} = baz;',
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 8,
+          endColumn: 11,
+        },
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'bar',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 13,
+          endColumn: 16,
+        },
+      ],
+    },
+    {
+      code: 'const {foo, bar: _bar} = baz;',
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 8,
+          endColumn: 11,
+        },
+      ],
+    },
+    {
+      code: 'const [foo, bar] = baz;',
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 8,
+          endColumn: 11,
+        },
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'bar',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 13,
+          endColumn: 16,
+        },
+      ],
+    },
+    {
+      code: 'const [foo, _bar] = baz;',
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 8,
+          endColumn: 11,
+        },
+      ],
+    },
+    {
+      code: 'const [foo, [bar]] = baz;',
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 8,
+          endColumn: 11,
+        },
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'bar',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 14,
+          endColumn: 17,
+        },
+      ],
+    },
+    {
+      code: 'const {foo, bar: {baz}} = bam;',
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 8,
+          endColumn: 11,
+        },
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'baz',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 19,
+          endColumn: 22,
+        },
+      ],
+    },
+    {
+      code: 'const {foo, bar: [baz]} = bam;',
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'foo',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 8,
+          endColumn: 11,
+        },
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'baz',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 1,
+          column: 19,
+          endColumn: 22,
         },
       ],
     },

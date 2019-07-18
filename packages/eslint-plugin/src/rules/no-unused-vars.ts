@@ -98,31 +98,101 @@ export default util.createRule<Options, MessageIds>({
       },
     };
 
-    function handleIdentifier(identifier: ts.Identifier, type: string): void {
-      const node = parserServices.tsNodeToESTreeNodeMap.get(identifier);
-      const regex = options.variables.ignoredNames;
-      const name = identifier.getText();
-      if (regex) {
-        if (!regex.test(name)) {
+    function handleIdentifier(identifier: ts.Identifier): void {
+      function report(type: string): void {
+        const node = parserServices.tsNodeToESTreeNodeMap.get(identifier);
+        const regex = options.variables.ignoredNames;
+        const name = identifier.getText();
+        if (regex) {
+          if (!regex.test(name)) {
+            context.report({
+              node,
+              messageId: 'unusedWithIgnorePattern',
+              data: {
+                name,
+                type,
+                pattern: regex.toString(),
+              },
+            });
+          }
+        } else {
           context.report({
             node,
-            messageId: 'unusedWithIgnorePattern',
+            messageId: 'unused',
             data: {
               name,
               type,
-              pattern: regex.toString(),
             },
           });
         }
-      } else {
-        context.report({
-          node,
-          messageId: 'unused',
-          data: {
-            name,
-            type,
-          },
-        });
+      }
+
+      const parent = identifier.parent;
+
+      // is a single variable diagnostic
+      switch (parent.kind) {
+        case ts.SyntaxKind.BindingElement:
+        case ts.SyntaxKind.ObjectBindingPattern:
+          report('Destructured Variable');
+          break;
+
+        case ts.SyntaxKind.ClassDeclaration:
+          report('Class');
+          break;
+
+        case ts.SyntaxKind.EnumDeclaration:
+          report('Enum');
+          break;
+
+        case ts.SyntaxKind.FunctionDeclaration:
+          report('Function');
+          break;
+
+        // this won't happen because there are specific nodes that wrap up named/default import identifiers
+        // case ts.SyntaxKind.ImportDeclaration:
+        // import equals is always treated as a variable
+        case ts.SyntaxKind.ImportEqualsDeclaration:
+        // the default import is NOT used, but a named import is used
+        case ts.SyntaxKind.ImportClause:
+        // a named import is NOT used, but either another named import, or the default import is used
+        case ts.SyntaxKind.ImportSpecifier:
+        // a namespace import is NOT used, but the default import is used
+        case ts.SyntaxKind.NamespaceImport:
+          report('Import');
+          break;
+
+        case ts.SyntaxKind.InterfaceDeclaration:
+          report('Interface');
+          break;
+
+        case ts.SyntaxKind.MethodDeclaration:
+          report('Method');
+          break;
+
+        case ts.SyntaxKind.Parameter:
+          handleParameterDeclaration(
+            identifier,
+            parent as ts.ParameterDeclaration,
+          );
+          break;
+
+        case ts.SyntaxKind.PropertyDeclaration:
+          report('Property');
+          break;
+
+        case ts.SyntaxKind.TypeAliasDeclaration:
+          report('Type');
+          break;
+
+        case ts.SyntaxKind.VariableDeclaration:
+          report('Variable');
+          break;
+
+        default:
+          throw new Error(`Unknown node with kind ${parent.kind}.`);
+        // TODO - should we just handle this gracefully?
+        // report('Unknown Node');
+        // break;
       }
     }
 
@@ -191,6 +261,23 @@ export default util.createRule<Options, MessageIds>({
       });
     }
 
+    function handleDestructure(parent: ts.BindingPattern): void {
+      // the entire desctructure is unused
+      // note that this case only ever triggers for simple, single-level destructured objects
+      // i.e. these will not trigger it:
+      // - const {a:_a, b, c: {d}} = z;
+      // - const [a, b] = c;
+
+      parent.elements.forEach(element => {
+        if (element.kind === ts.SyntaxKind.BindingElement) {
+          const name = element.name;
+          if (name.kind === ts.SyntaxKind.Identifier) {
+            handleIdentifier(name);
+          }
+        }
+      });
+    }
+
     return {
       'Program:exit'(program: TSESTree.Node) {
         const tsNode = parserServices.esTreeNodeToTSNodeMap.get(program);
@@ -202,75 +289,12 @@ export default util.createRule<Options, MessageIds>({
             if (diag.start !== undefined) {
               const node = util.getTokenAtPosition(sourceFile, diag.start);
               const parent = node.parent;
-              if (node.kind === ts.SyntaxKind.Identifier) {
-                // is a single variable diagnostic
-                switch (parent.kind) {
-                  case ts.SyntaxKind.ClassDeclaration:
-                    handleIdentifier(node as ts.Identifier, 'Class');
-                    break;
-
-                  case ts.SyntaxKind.EnumDeclaration:
-                    handleIdentifier(node as ts.Identifier, 'Enum');
-                    break;
-
-                  case ts.SyntaxKind.FunctionDeclaration:
-                    handleIdentifier(node as ts.Identifier, 'Function');
-                    break;
-
-                  // this won't happen because there are specific nodes that wrap up named/default import identifiers
-                  // case ts.SyntaxKind.ImportDeclaration:
-
-                  // import equals is always treated as a variable
-                  case ts.SyntaxKind.ImportEqualsDeclaration:
-                  // the default import is NOT used, but a named import is used
-                  case ts.SyntaxKind.ImportClause:
-                  // a named import is NOT used, but either another named import, or the default import is used
-                  case ts.SyntaxKind.ImportSpecifier:
-                  // a namespace import is NOT used, but the default import is used
-                  case ts.SyntaxKind.NamespaceImport:
-                    handleIdentifier(node as ts.Identifier, 'Import');
-                    break;
-
-                  case ts.SyntaxKind.InterfaceDeclaration:
-                    handleIdentifier(node as ts.Identifier, 'Interface');
-                    break;
-
-                  case ts.SyntaxKind.MethodDeclaration:
-                    handleIdentifier(node as ts.Identifier, 'Method');
-                    break;
-
-                  case ts.SyntaxKind.Parameter:
-                    handleParameterDeclaration(
-                      node as ts.Identifier,
-                      parent as ts.ParameterDeclaration,
-                    );
-                    break;
-
-                  case ts.SyntaxKind.PropertyDeclaration:
-                    handleIdentifier(node as ts.Identifier, 'Property');
-                    break;
-
-                  case ts.SyntaxKind.TypeAliasDeclaration:
-                    handleIdentifier(node as ts.Identifier, 'Type');
-                    break;
-
-                  case ts.SyntaxKind.VariableDeclaration:
-                    handleIdentifier(node as ts.Identifier, 'Variable');
-                    break;
-
-                  default:
-                    throw new Error(`Unknown node with kind ${parent.kind}.`);
-                  // TODO - should we just handle this gracefully?
-                  // handleVariable(node as ts.Identifier, 'Unknown Node');
-                  // break;
-                }
-              } else if (
-                node.kind === ts.SyntaxKind.ImportKeyword &&
-                parent.kind === ts.SyntaxKind.ImportDeclaration
-              ) {
-                handleImportDeclaration(parent as ts.ImportDeclaration);
-              } else if (isDestructure(node)) {
-                // TODO - support destructuring
+              if (isIdentifier(node)) {
+                handleIdentifier(node);
+              } else if (isImport(parent)) {
+                handleImportDeclaration(parent);
+              } else if (isDestructure(parent)) {
+                handleDestructure(parent);
               }
             }
           }
@@ -301,9 +325,17 @@ function isUnusedDiagnostic(code: number): boolean {
 /**
  * Checks if the given node is a destructuring pattern
  */
-function isDestructure(node: ts.Node): boolean {
+function isDestructure(node: ts.Node): node is ts.BindingPattern {
   return (
     node.kind === ts.SyntaxKind.ObjectBindingPattern ||
     node.kind === ts.SyntaxKind.ArrayBindingPattern
   );
+}
+
+function isImport(node: ts.Node): node is ts.ImportDeclaration {
+  return node.kind === ts.SyntaxKind.ImportDeclaration;
+}
+
+function isIdentifier(node: ts.Node): node is ts.Identifier {
+  return node.kind === ts.SyntaxKind.Identifier;
 }
