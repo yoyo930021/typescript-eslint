@@ -196,7 +196,7 @@ export default util.createRule<Options, MessageIds>({
       }
     }
 
-    const unusedParameters = new Set<ts.Identifier>();
+    const unusedParameters = new Set<ts.BindingName>();
     function handleParameterDeclaration(
       identifier: ts.Identifier,
       parent: ts.ParameterDeclaration,
@@ -229,12 +229,7 @@ export default util.createRule<Options, MessageIds>({
         // once all diagnostics are processed, we can check if the following args are unused
         afterAllDiagnosticsCallbacks.push(() => {
           for (const param of parent.parent.parameters) {
-            if (isDestructure(param.name)) {
-              // TODO - support destructuring
-              return;
-            }
-
-            if (!unusedParameters.has(param.name as ts.Identifier)) {
+            if (!unusedParameters.has(param.name)) {
               return;
             }
           }

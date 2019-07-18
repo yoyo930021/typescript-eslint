@@ -36,12 +36,6 @@ const DEFAULT_IGNORED_REGEX = new RegExp(
 ).toString();
 ruleTester.run('no-unused-vars', rule, {
   valid: makeExternalModule([
-    {
-      code: `
-const {a: _a, b} = c;
-console.log(a, b);
-      `,
-    },
     ///////////////////////
     // #region variables //
     ///////////////////////
@@ -218,7 +212,66 @@ export class Clazz {
         },
       ],
     },
-    { code: 'export function foo(_a) {}' },
+    { code: 'export function foo({a: _a}) {}' },
+    { code: 'export function foo({a: { b: _b }}) {}' },
+    { code: 'export function foo([_a]) {}' },
+    { code: 'export function foo([[_a]]) {}' },
+    {
+      code: `
+export function foo({a: _a}, used) {
+  console.log(used);
+}
+      `,
+      options: [
+        {
+          arguments: {
+            ignoreIfArgsAfterAreUsed: true,
+          },
+        },
+      ],
+    },
+    {
+      code: `
+export function foo({a: { b: _b }}, used) {
+  console.log(used);
+}
+      `,
+      options: [
+        {
+          arguments: {
+            ignoreIfArgsAfterAreUsed: true,
+          },
+        },
+      ],
+    },
+    {
+      code: `
+export function foo([_a], used) {
+  console.log(used);
+}
+      `,
+      options: [
+        {
+          arguments: {
+            ignoreIfArgsAfterAreUsed: true,
+          },
+        },
+      ],
+    },
+    {
+      code: `
+export function foo([[_a]], used) {
+  console.log(used);
+}
+      `,
+      options: [
+        {
+          arguments: {
+            ignoreIfArgsAfterAreUsed: true,
+          },
+        },
+      ],
+    },
     // #endregion parameters //
     ///////////////////////////
 
@@ -1322,6 +1375,86 @@ export class Clazz {
           },
           line: 3,
           column: 15,
+          endColumn: 24,
+        },
+      ],
+    },
+    {
+      code: `
+export function foo({a}, used) {
+  console.log(used);
+}
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'a',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 22,
+          endColumn: 23,
+        },
+      ],
+    },
+    {
+      code: `
+export function foo({a: {b}}, used) {
+  console.log(used);
+}
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'b',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 26,
+          endColumn: 27,
+        },
+      ],
+    },
+    {
+      code: `
+export function foo([a], used) {
+  console.log(used);
+}
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'a',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 22,
+          endColumn: 23,
+        },
+      ],
+    },
+    {
+      code: `
+export function foo([[a]], used) {
+  console.log(used);
+}
+      `,
+      errors: [
+        {
+          messageId: 'unusedWithIgnorePattern',
+          data: {
+            name: 'a',
+            type: 'Destructured Variable',
+            pattern: DEFAULT_IGNORED_REGEX,
+          },
+          line: 2,
+          column: 23,
           endColumn: 24,
         },
       ],
