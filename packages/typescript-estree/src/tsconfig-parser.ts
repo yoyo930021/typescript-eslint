@@ -11,14 +11,6 @@ export const unusedVarsOptions = {
   noUnusedLocals: true,
   noUnusedParameters: true,
 };
-/**
- * Default compiler options for program generation from single root file
- */
-const defaultCompilerOptions: ts.CompilerOptions = {
-  allowNonTsExtensions: true,
-  allowJs: true,
-  ...unusedVarsOptions,
-};
 
 /**
  * Maps tsconfig paths to their corresponding file contents and resulting watches
@@ -211,7 +203,11 @@ export function createProgram(code: string, filePath: string, extra: Extra) {
 
   const commandLine = ts.getParsedCommandLineOfConfigFile(
     tsconfigPath,
-    defaultCompilerOptions,
+    {
+      allowNonTsExtensions: true,
+      allowJs: true,
+      ...unusedVarsOptions,
+    },
     { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} },
   );
 
