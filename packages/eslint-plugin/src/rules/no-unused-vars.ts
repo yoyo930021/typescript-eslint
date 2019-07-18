@@ -6,12 +6,8 @@ import * as util from '../util';
 
 export type Options = [
   {
-    variables?: {
-      ignoredNamesRegex?: string | boolean;
-    };
-    arguments?: {
-      ignoreIfArgsAfterAreUsed?: boolean;
-    };
+    ignoredNamesRegex?: string | boolean;
+    ignoreArgsIfArgsAfterAreUsed?: boolean;
   }
 ];
 export type MessageIds =
@@ -25,17 +21,6 @@ interface NodeWithTypeParams {
 }
 
 export const DEFAULT_IGNORED_REGEX_STRING = '^_';
-const IGNORED_NAMES_REGEX = {
-  oneOf: [
-    {
-      type: 'string',
-    },
-    {
-      type: 'boolean',
-      enum: [false],
-    },
-  ],
-};
 export default util.createRule<Options, MessageIds>({
   name: 'no-unused-vars',
   meta: {
@@ -49,21 +34,19 @@ export default util.createRule<Options, MessageIds>({
       {
         type: 'object',
         properties: {
-          variables: {
-            type: 'object',
-            properties: {
-              ignoredNamesRegex: IGNORED_NAMES_REGEX,
-            },
-            additionalProperties: false,
-          },
-          arguments: {
-            properties: {
-              ignoredNamesRegex: IGNORED_NAMES_REGEX,
-              ignoreIfArgsAfterAreUsed: {
-                type: 'boolean',
+          ignoredNamesRegex: {
+            oneOf: [
+              {
+                type: 'string',
               },
-            },
-            additionalProperties: false,
+              {
+                type: 'boolean',
+                enum: [false],
+              },
+            ],
+          },
+          ignoreArgsIfArgsAfterAreUsed: {
+            type: 'boolean',
           },
         },
         additionalProperties: false,
@@ -79,12 +62,8 @@ export default util.createRule<Options, MessageIds>({
   },
   defaultOptions: [
     {
-      variables: {
-        ignoredNamesRegex: DEFAULT_IGNORED_REGEX_STRING,
-      },
-      arguments: {
-        ignoreIfArgsAfterAreUsed: false,
-      },
+      ignoredNamesRegex: DEFAULT_IGNORED_REGEX_STRING,
+      ignoreArgsIfArgsAfterAreUsed: false,
     },
   ],
   create(context, [userOptions]) {
@@ -92,25 +71,19 @@ export default util.createRule<Options, MessageIds>({
     const tsProgram = parserServices.program;
     const afterAllDiagnosticsCallbacks: (() => void)[] = [];
 
-    function getIgnoredNames(opt?: { ignoredNamesRegex?: string | boolean }) {
-      return opt && typeof opt.ignoredNamesRegex === 'string'
-        ? new RegExp(opt.ignoredNamesRegex)
-        : null;
-    }
     const options = {
-      variables: {
-        ignoredNames: getIgnoredNames(userOptions.variables),
-      },
-      arguments: {
-        ignoreIfArgsAfterAreUsed:
-          userOptions.arguments!.ignoreIfArgsAfterAreUsed || false,
-      },
+      ignoredNames:
+        userOptions && typeof userOptions.ignoredNamesRegex === 'string'
+          ? new RegExp(userOptions.ignoredNamesRegex)
+          : null,
+      ignoreArgsIfArgsAfterAreUsed:
+        userOptions.ignoreArgsIfArgsAfterAreUsed || false,
     };
 
     function handleIdentifier(identifier: ts.Identifier): void {
       function report(type: string): void {
         const node = parserServices.tsNodeToESTreeNodeMap.get(identifier);
-        const regex = options.variables.ignoredNames;
+        const regex = options.ignoredNames;
         const name = identifier.getText();
         if (regex) {
           if (!regex.test(name)) {
@@ -238,7 +211,7 @@ export default util.createRule<Options, MessageIds>({
       const isLastParameter =
         parent.parent.parameters.indexOf(parent) ===
         parent.parent.parameters.length - 1;
-      if (!isLastParameter && options.arguments.ignoreIfArgsAfterAreUsed) {
+      if (!isLastParameter && options.ignoreArgsIfArgsAfterAreUsed) {
         // once all diagnostics are processed, we can check if the following args are unused
         afterAllDiagnosticsCallbacks.push(() => {
           for (const param of parent.parent.parameters) {
@@ -350,7 +323,7 @@ export default util.createRule<Options, MessageIds>({
 function isUnusedDiagnostic(code: number): boolean {
   return [
     6133, // '{0}' is declared but never used.
-    // 6138, // Property '{0}' is declared but its value is never read.
+    6138, // Property '{0}' is declared but its value is never read.
     6192, // All imports in import declaration are unused.
     6196, // '{0}' is declared but its value is never read.
     6198, // All destructured elements are unused.
