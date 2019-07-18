@@ -212,6 +212,28 @@ export class Clazz {
         },
       ],
     },
+    {
+      code: `
+export class Clazz {
+  constructor(private a: string, public b: string) {}
+}
+      `,
+      options: [
+        {
+          arguments: {
+            ignoreIfArgsAfterAreUsed: true,
+          },
+        },
+      ],
+    },
+    {
+      code: `
+export class Clazz {
+  constructor(private a: string) {}
+  foo() { console.log(this.a) }
+}
+      `,
+    },
     { code: 'export function foo({a: _a}) {}' },
     { code: 'export function foo({a: { b: _b }}) {}' },
     { code: 'export function foo([_a]) {}' },
@@ -322,6 +344,85 @@ console.log(defaultImp, namespace);
     { code: 'import _defaultImp, * as _namespace from "thing";' },
     // #endregion import //
     ///////////////////////
+
+    //////////////////////
+    // #region generics //
+    //////////////////////
+    { code: 'export function foo<T>(): T {}' },
+    { code: 'export function foo<T, T2>(): T & T2 {}' },
+    { code: 'export function foo<T, _T2>(): T {}' },
+    {
+      code: `
+export class foo<T> {
+  prop: T
+}
+      `,
+    },
+    {
+      code: `
+export class foo<T, T2> {
+  prop: T
+  prop2: T2
+}
+      `,
+    },
+    {
+      code: `
+export class foo<T, _T2> {
+  prop: T
+  prop2: T2
+}
+      `,
+    },
+    {
+      code: `
+export interface foo<T> {
+  prop: T
+}
+      `,
+    },
+    {
+      code: `
+export interface foo<T, T2> {
+  prop: T
+  prop2: T2
+}
+      `,
+    },
+    {
+      code: `
+export interface foo<T, _T2> {
+  prop: T
+  prop2: T2
+}
+      `,
+    },
+    {
+      code: `
+export type foo<T> = {
+  prop: T
+
+}
+      `,
+    },
+    {
+      code: `
+export type foo<T, T2> = {
+  prop: T
+  prop2: T2
+}
+      `,
+    },
+    {
+      code: `
+export type foo<T, _T2> = {
+  prop: T
+  prop2: T2
+}
+      `,
+    },
+    // #endregion generics //
+    /////////////////////////
 
     // #region old valid tests
     //     `
@@ -1633,6 +1734,232 @@ console.log(named1);
     },
     // #endregion import //
     ///////////////////////
+
+    //////////////////////
+    // #region generics //
+    //////////////////////
+    {
+      code: 'export function foo<T>() {}',
+      errors: [
+        {
+          messageId: 'unusedTypeParameters',
+          line: 1,
+          column: 20,
+          endColumn: 23,
+        },
+      ],
+    },
+    {
+      code: 'export function foo<T, T2>() {}',
+      errors: [
+        {
+          messageId: 'unusedTypeParameters',
+          line: 1,
+          column: 20,
+          endColumn: 27,
+        },
+      ],
+    },
+    {
+      code: 'export function foo<T, T2>(): T2 {}',
+      errors: [
+        {
+          messageId: 'unused',
+          data: {
+            name: 'T',
+            type: 'Type Parameter',
+          },
+          line: 1,
+          column: 21,
+          endColumn: 22,
+        },
+      ],
+    },
+    {
+      code: 'export function foo<T, _T2>() {}',
+      errors: [
+        {
+          messageId: 'unused',
+          data: {
+            name: 'T',
+            type: 'Type Parameter',
+          },
+          line: 1,
+          column: 21,
+          endColumn: 22,
+        },
+      ],
+    },
+    {
+      code: 'export class foo<T> {}',
+      errors: [
+        {
+          messageId: 'unusedTypeParameters',
+          line: 1,
+          column: 17,
+          endColumn: 20,
+        },
+      ],
+    },
+    {
+      code: 'export class foo<T, T2> {}',
+      errors: [
+        {
+          messageId: 'unusedTypeParameters',
+          line: 1,
+          column: 17,
+          endColumn: 24,
+        },
+      ],
+    },
+    {
+      code: `
+export class foo<T, T2> {
+  prop: T2
+}
+      `,
+      errors: [
+        {
+          messageId: 'unused',
+          data: {
+            name: 'T',
+            type: 'Type Parameter',
+          },
+          line: 2,
+          column: 18,
+          endColumn: 19,
+        },
+      ],
+    },
+    {
+      code: 'export class foo<T, _T2> {}',
+      errors: [
+        {
+          messageId: 'unused',
+          data: {
+            name: 'T',
+            type: 'Type Parameter',
+          },
+          line: 1,
+          column: 18,
+          endColumn: 19,
+        },
+      ],
+    },
+    {
+      code: 'export interface foo<T> {}',
+      errors: [
+        {
+          messageId: 'unusedTypeParameters',
+          line: 1,
+          column: 21,
+          endColumn: 24,
+        },
+      ],
+    },
+    {
+      code: 'export interface foo<T, T2> {}',
+      errors: [
+        {
+          messageId: 'unusedTypeParameters',
+          line: 1,
+          column: 21,
+          endColumn: 28,
+        },
+      ],
+    },
+    {
+      code: `
+export interface foo<T, T2> {
+  prop: T2
+}
+      `,
+      errors: [
+        {
+          messageId: 'unused',
+          data: {
+            name: 'T',
+            type: 'Type Parameter',
+          },
+          line: 2,
+          column: 22,
+          endColumn: 23,
+        },
+      ],
+    },
+    {
+      code: 'export interface foo<T, _T2> {}',
+      errors: [
+        {
+          messageId: 'unused',
+          data: {
+            name: 'T',
+            type: 'Type Parameter',
+          },
+          line: 1,
+          column: 22,
+          endColumn: 23,
+        },
+      ],
+    },
+    {
+      code: 'export type foo<T> = {}',
+      errors: [
+        {
+          messageId: 'unusedTypeParameters',
+          line: 1,
+          column: 16,
+          endColumn: 19,
+        },
+      ],
+    },
+    {
+      code: 'export type foo<T, T2> = {}',
+      errors: [
+        {
+          messageId: 'unusedTypeParameters',
+          line: 1,
+          column: 16,
+          endColumn: 23,
+        },
+      ],
+    },
+    {
+      code: `
+export type foo<T, T2> = {
+  prop: T2
+}
+      `,
+      errors: [
+        {
+          messageId: 'unused',
+          data: {
+            name: 'T',
+            type: 'Type Parameter',
+          },
+          line: 2,
+          column: 17,
+          endColumn: 18,
+        },
+      ],
+    },
+    {
+      code: 'export type foo<T, _T2> = {}',
+      errors: [
+        {
+          messageId: 'unused',
+          data: {
+            name: 'T',
+            type: 'Type Parameter',
+          },
+          line: 1,
+          column: 17,
+          endColumn: 18,
+        },
+      ],
+    },
+    // #endregion generics //
+    /////////////////////////
 
     // #region old invalid tests
     //     {

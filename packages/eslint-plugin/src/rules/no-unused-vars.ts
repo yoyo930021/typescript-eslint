@@ -14,7 +14,15 @@ export type Options = [
     };
   }
 ];
-export type MessageIds = 'unused' | 'unusedWithIgnorePattern' | 'unusedImport';
+export type MessageIds =
+  | 'unused'
+  | 'unusedWithIgnorePattern'
+  | 'unusedImport'
+  | 'unusedTypeParameters';
+
+interface NodeWithTypeParams {
+  typeParameters: ts.NodeArray<ts.TypeParameterDeclaration>;
+}
 
 export const DEFAULT_IGNORED_REGEX_STRING = '^_';
 const IGNORED_NAMES_REGEX = {
@@ -66,6 +74,7 @@ export default util.createRule<Options, MessageIds>({
       unusedWithIgnorePattern:
         "{{type}} '{{name}}' is declared but its value is never read. Allowed unused names must match {{pattern}}",
       unusedImport: 'All imports in import declaration are unused.',
+      unusedTypeParameters: 'All type parameters are unused.',
     },
   },
   defaultOptions: [
@@ -184,6 +193,10 @@ export default util.createRule<Options, MessageIds>({
           report('Type');
           break;
 
+        case ts.SyntaxKind.TypeParameter:
+          handleTypeParam(identifier);
+          break;
+
         case ts.SyntaxKind.VariableDeclaration:
           report('Variable');
           break;
@@ -247,7 +260,7 @@ export default util.createRule<Options, MessageIds>({
 
       /*
       NOTE - Typescript will automatically ignore imports that have a
-            leading underscore in their name. We cannot do anything about this.
+             leading underscore in their name. We cannot do anything about this.
       */
 
       context.report({
@@ -273,6 +286,33 @@ export default util.createRule<Options, MessageIds>({
       });
     }
 
+    function handleTypeParamList(node: NodeWithTypeParams): void {
+      // the entire generic decl list is unused
+
+      /*
+      NOTE - Typescript will automatically ignore generics that have a
+             leading underscore in their name. We cannot do anything about this.
+      */
+
+      const parent = parserServices.tsNodeToESTreeNodeMap.get(node as any) as {
+        typeParameters: TSESTree.TSTypeParameterDeclaration;
+      };
+      context.report({
+        messageId: 'unusedTypeParameters',
+        node: parent.typeParameters,
+      });
+    }
+    function handleTypeParam(identifier: ts.Identifier): void {
+      context.report({
+        node: parserServices.tsNodeToESTreeNodeMap.get(identifier),
+        messageId: 'unused',
+        data: {
+          name: identifier.getText(),
+          type: 'Type Parameter',
+        },
+      });
+    }
+
     return {
       'Program:exit'(program: TSESTree.Node) {
         const tsNode = parserServices.esTreeNodeToTSNodeMap.get(program);
@@ -290,6 +330,8 @@ export default util.createRule<Options, MessageIds>({
                 handleImportDeclaration(parent);
               } else if (isDestructure(parent)) {
                 handleDestructure(parent);
+              } else if (isGeneric(node, parent)) {
+                handleTypeParamList(parent);
               }
             }
           }
@@ -308,7 +350,7 @@ export default util.createRule<Options, MessageIds>({
 function isUnusedDiagnostic(code: number): boolean {
   return [
     6133, // '{0}' is declared but never used.
-    6138, // Property '{0}' is declared but its value is never read.
+    // 6138, // Property '{0}' is declared but its value is never read.
     6192, // All imports in import declaration are unused.
     6196, // '{0}' is declared but its value is never read.
     6198, // All destructured elements are unused.
@@ -333,4 +375,14 @@ function isImport(node: ts.Node): node is ts.ImportDeclaration {
 
 function isIdentifier(node: ts.Node): node is ts.Identifier {
   return node.kind === ts.SyntaxKind.Identifier;
+}
+
+function isGeneric(
+  node: ts.Node,
+  parent: ts.Node,
+): parent is ts.Node & NodeWithTypeParams {
+  return (
+    node.kind === ts.SyntaxKind.LessThanToken &&
+    (parent as any).typeParameters !== undefined
+  );
 }
