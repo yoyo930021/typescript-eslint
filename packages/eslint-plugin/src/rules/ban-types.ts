@@ -96,11 +96,10 @@ export default util.createRule<Options, MessageIds>({
           fixWith: 'number',
         },
         Object: {
-          message: 'Object is not type safe, use Record<string, unknown> instead',
-          fixWith: 'Record<string, unknown>',
+          message: 'The Object type is mostly the same as unknown, you probably want Record<string, unknown> instead',
         },
         object: {
-          message: 'Object is not type safe, use Record<string, unknown> instead',
+          message: 'The object type is hard to use, use Record<string, unknown> instead',
           fixWith: 'Record<string, unknown>',
         },
         Symbol: {
