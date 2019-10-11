@@ -49,12 +49,14 @@ This rule aims enforce the usage of the safer operator.
 type Options = [
   {
     ignoreConditionalTests?: boolean;
+    ignoreMixedLogicalExpressions?: boolean;
   },
 ];
 
 const defaultOptions = [
   {
     ignoreConditionalTests: true,
+    ignoreMixedLogicalExpressions: true;
   },
 ];
 ```
@@ -95,9 +97,47 @@ for (let i = 0; a ?? b; i += 1) {}
 a ?? b ? true : false;
 ```
 
+### ignoreMixedLogicalExpressions
+
+Setting this option to `true` (the default) will cause the rule to ignore any logical or expressions thare are part of a mixed logical expression (with `&&`).
+
+Generally expressions within mixed logical expressions intentionally use the falsey fallthrough behaviour of the logical or operator, meaning that fixing the operator to the nullish coalesce operator could cause bugs.
+
+If you're looking to enforce stricter conditional tests, you should consider using the `strict-boolean-expressions` rule.
+
+Incorrect code for `ignoreMixedLogicalExpressions: false`, and correct code for `ignoreMixedLogicalExpressions: true`:
+
+<!-- prettier-ignore -->
+```ts
+declare const a: string | null;
+declare const b: string | null;
+declare const c: string | null;
+declare const d: string | null;
+
+a || b && c;
+a && b || c || d;
+a || b && c || d;
+a || b && c && d;
+```
+
+Correct code for `ignoreMixedLogicalExpressions: false`:
+
+<!-- prettier-ignore -->
+```ts
+declare const a: string | null;
+declare const b: string | null;
+declare const c: string | null;
+declare const d: string | null;
+
+a ?? b && c;
+a && b ?? c ?? d;
+a ?? b && c ?? d;
+a ?? b && c && d;
+```
+
 ## When Not To Use It
 
-If you are using TypeScript 3.7 (or greater), then you will not be able to use this rule.
+If you are using TypeScript 3.7 (or greater), then you will not be able to use this rule, as the operator is not supported.
 
 ## Further Reading
 

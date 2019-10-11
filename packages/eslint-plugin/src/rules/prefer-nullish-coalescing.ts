@@ -9,6 +9,7 @@ import * as util from '../util';
 export type Options = [
   {
     ignoreConditionalTests?: boolean;
+    ignoreMixedLogicalExpressions?: boolean;
   },
 ];
 export type MessageIds = 'preferNullish';
@@ -36,6 +37,9 @@ export default util.createRule<Options, MessageIds>({
           ignoreConditionalTests: {
             type: 'boolean',
           },
+          ignoreMixedLogicalExpressions: {
+            type: 'boolean',
+          },
         },
         additionalProperties: false,
       },
@@ -44,9 +48,10 @@ export default util.createRule<Options, MessageIds>({
   defaultOptions: [
     {
       ignoreConditionalTests: true,
+      ignoreMixedLogicalExpressions: true,
     },
   ],
-  create(context, [{ ignoreConditionalTests }]) {
+  create(context, [{ ignoreConditionalTests, ignoreMixedLogicalExpressions }]) {
     const parserServices = util.getParserServices(context);
     const sourceCode = context.getSourceCode();
     const checker = parserServices.program.getTypeChecker();
@@ -65,6 +70,13 @@ export default util.createRule<Options, MessageIds>({
         }
 
         if (ignoreConditionalTests === true && isConditionalTest(node)) {
+          return;
+        }
+
+        if (
+          ignoreMixedLogicalExpressions === true &&
+          isMixedLogicalExpression(node)
+        ) {
           return;
         }
 
@@ -103,7 +115,43 @@ function isConditionalTest(node: TSESTree.Node): boolean {
       return true;
     }
 
+    if (
+      [
+        AST_NODE_TYPES.ArrowFunctionExpression,
+        AST_NODE_TYPES.FunctionExpression,
+      ].includes(current.type)
+    ) {
+      /**
+       * This is a weird situation like:
+       * `if (() => a || b) {}`
+       * `if (function () { return a || b }) {}`
+       */
+      return false;
+    }
+
     current = current.parent;
+  }
+
+  return false;
+}
+
+function isMixedLogicalExpression(node: TSESTree.LogicalExpression): boolean {
+  const seen = new Set<TSESTree.Node | undefined>();
+  const queue = [node.parent, node.left, node.right];
+  for (const current of queue) {
+    if (seen.has(current)) {
+      continue;
+    }
+    seen.add(current);
+
+    if (current && current.type === AST_NODE_TYPES.LogicalExpression) {
+      if (current.operator === '&&') {
+        return true;
+      } else if (current.operator === '||') {
+        // check the pieces of the node to catch cases like `a || b || c && d`
+        queue.push(current.parent, current.left, current.right);
+      }
+    }
   }
 
   return false;
