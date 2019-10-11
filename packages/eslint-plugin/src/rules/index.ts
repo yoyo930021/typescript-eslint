@@ -46,6 +46,7 @@ import preferForOf from './prefer-for-of';
 import preferFunctionType from './prefer-function-type';
 import preferIncludes from './prefer-includes';
 import preferNamespaceKeyword from './prefer-namespace-keyword';
+import preferNullishCoalescing from './prefer-nullish-coalescing';
 import preferReadonly from './prefer-readonly';
 import preferRegexpExec from './prefer-regexp-exec';
 import preferStringStartsEndsWith from './prefer-string-starts-ends-with';
@@ -113,6 +114,7 @@ export default {
   'prefer-function-type': preferFunctionType,
   'prefer-includes': preferIncludes,
   'prefer-namespace-keyword': preferNamespaceKeyword,
+  'prefer-nullish-coalescing': preferNullishCoalescing,
   'prefer-readonly': preferReadonly,
   'prefer-regexp-exec': preferRegexpExec,
   'prefer-string-starts-ends-with': preferStringStartsEndsWith,
