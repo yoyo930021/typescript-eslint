@@ -45,7 +45,7 @@ const programFileListCache = new Map<CanonicalPath, Set<CanonicalPath>>();
  */
 const tsconfigLastModifiedTimestampCache = new Map<CanonicalPath, number>();
 
-const parsedFilesSeen = new Set<CanonicalPath>();
+const parsedFilesHash = new Map<CanonicalPath, string>();
 
 /**
  * Clear all of the parser caches.
@@ -55,7 +55,7 @@ function clearCaches(): void {
   knownWatchProgramMap.clear();
   fileWatchCallbackTrackingMap.clear();
   folderWatchCallbackTrackingMap.clear();
-  parsedFilesSeen.clear();
+  parsedFilesHash.clear();
   programFileListCache.clear();
   tsconfigLastModifiedTimestampCache.clear();
 }
@@ -128,7 +128,8 @@ function getProgramsForProjects(
   // TODO: only update when necessary, currently marks as changed on every lint
   const fileWatchCallbacks = fileWatchCallbackTrackingMap.get(filePath);
   if (
-    parsedFilesSeen.has(filePath) &&
+    parsedFilesHash.has(filePath) &&
+    parsedFilesHash.get(filePath) !== ts.sys.createHash!(code) &&
     fileWatchCallbacks &&
     fileWatchCallbacks.size > 0
   ) {
@@ -232,11 +233,13 @@ function createWatchProgram(
   const oldReadFile = watchCompilerHost.readFile;
   watchCompilerHost.readFile = (filePathIn, encoding): string | undefined => {
     const filePath = getCanonicalFileName(filePathIn);
-    parsedFilesSeen.add(filePath);
-    return path.normalize(filePath) ===
+    const content =
+      path.normalize(filePath) ===
       path.normalize(currentLintOperationState.filePath)
-      ? currentLintOperationState.code
-      : oldReadFile(filePath, encoding);
+        ? currentLintOperationState.code
+        : oldReadFile(filePath, encoding);
+    parsedFilesHash.set(filePath, content ? ts.sys.createHash!(content) : '');
+    return content;
   };
 
   // ensure process reports error on failure instead of exiting process immediately
