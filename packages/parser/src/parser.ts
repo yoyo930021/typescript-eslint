@@ -66,6 +66,9 @@ export function parseForESLint(
   if (typeof options.ecmaFeatures !== 'object') {
     options.ecmaFeatures = {};
   }
+  if (!('fragment' in options)) {
+    options.fragment = false;
+  }
 
   const parserOptions: TSESTreeOptions = {};
   Object.assign(parserOptions, options, {

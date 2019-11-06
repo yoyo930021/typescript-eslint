@@ -20,6 +20,7 @@ export interface Extra {
   tokens: null | TSESTree.Token[];
   tsconfigRootDir: string;
   useJSXTextNode: boolean;
+  fragment: boolean;
 }
 
 export interface TSESTreeOptions {
@@ -38,6 +39,7 @@ export interface TSESTreeOptions {
   tokens?: boolean;
   tsconfigRootDir?: string;
   useJSXTextNode?: boolean;
+  fragment?: boolean;
 }
 
 // This lets us use generics to type the return value, and removes the need to

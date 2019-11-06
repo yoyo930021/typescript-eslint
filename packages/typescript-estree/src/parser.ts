@@ -59,12 +59,15 @@ function getProgramAndAST(
   code: string,
   shouldProvideParserServices: boolean,
   shouldCreateDefaultProgram: boolean,
+  shouldFragment: boolean,
 ): ASTAndProgram | undefined {
   return (
     (shouldProvideParserServices &&
+      !shouldFragment &&
       createProjectProgram(code, shouldCreateDefaultProgram, extra)) ||
     (shouldProvideParserServices &&
       shouldCreateDefaultProgram &&
+      !shouldFragment &&
       createDefaultProgram(code, extra)) ||
     createIsolatedProgram(code, extra)
   );
@@ -105,6 +108,7 @@ function resetExtra(): void {
     tokens: null,
     tsconfigRootDir: process.cwd(),
     useJSXTextNode: false,
+    fragment: false,
   };
 }
 
@@ -228,6 +232,8 @@ function applyParserOptionsToExtra(options: TSESTreeOptions): void {
   extra.createDefaultProgram =
     typeof options.createDefaultProgram === 'boolean' &&
     options.createDefaultProgram;
+
+  extra.fragment = typeof options.fragment === 'boolean' && options.fragment;
 }
 
 function warnAboutTSVersion(): void {
@@ -363,6 +369,7 @@ function parseAndGenerateServices<T extends TSESTreeOptions = TSESTreeOptions>(
     code,
     shouldProvideParserServices,
     extra.createDefaultProgram,
+    extra.fragment,
   )!;
 
   /**

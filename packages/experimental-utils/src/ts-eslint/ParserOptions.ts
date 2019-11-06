@@ -19,4 +19,5 @@ export interface ParserOptions {
   tsconfigRootDir?: string;
   useJSXTextNode?: boolean;
   warnOnUnsupportedTypeScriptVersion?: boolean;
+  fragment?: boolean;
 }
